@@ -1,0 +1,33 @@
+1. Frontend Module
+Purpose: Code editor input, user interface, animation visualization
+Framework: React (with Vite for bundling and fast dev server)
+Code Editor: Monaco Editor (VS Code’s editor component)
+Visualization: D3.js or Canvas API (for animating execution and call stack)
+State Management: React Context / Zustand / Redux (optional depending on complexity)
+Styling: CSS Modules, Tailwind CSS, or Styled Components
+Communication: Fetch API / Axios for HTTP requests, or WebSocket for realtime updates
+
+2. Backend Module
+
+Purpose: API server, receiving code & commands, coordinating trace & LLM calls
+Framework: FastAPI (preferred for async, speed, and ease) or Flask
+Language: Python
+API Protocol: RESTful API with JSON payloads
+Concurrency: Async support (FastAPI natively async; Flask via extensions)
+Security: JWT / OAuth for authentication (if needed later)
+
+3. Tracing and Execution Module
+
+Purpose: Execute user code, trace execution line-by-line using sys.settrace
+Language: Python
+Core Tool: sys.settrace for tracing code execution events
+Data Format: JSON (to send trace info like line numbers, variables, stack)
+Error Handling: Catch runtime errors gracefully to avoid crashing backend
+Modes: Support “Run” mode (full execution) and “Step” mode (line-by-line)
+
+4. LLM Explainer Module
+Purpose: Provide code explanations, commentary on traced execution
+Models: OpenAI GPT API (e.g., GPT-4), or open-source alternatives like CodeT5 or CodeBERT
+Language: Python (integrated within backend or separate microservice)
+API Calls: REST or SDK calls to OpenAI or self-hosted models
+Caching: Optional Redis / in-memory cache to store common explanations and reduce costs

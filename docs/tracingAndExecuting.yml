@@ -1,0 +1,58 @@
+┌───────────────────────────────┐
+│ Start: Receive code & command │
+│ (run / step) from Backend API │
+└───────────────┬───────────────┘
+                │
+                ▼
+┌───────────────────────────────┐
+│ Initialize tracing environment │
+│ - Setup sys.settrace callback  │
+│ - Prepare data structures to   │
+│   record execution details     │
+└───────────────┬───────────────┘
+                │
+                ▼
+┌───────────────────────────────┐
+│ Start executing the user code  │
+│ with tracing enabled           │
+│ (sys.settrace triggers on      │
+│ each line / call / return)     │
+└───────────────┬───────────────┘
+                │
+                ▼
+┌───────────────────────────────┐
+│ On each trace event:           │
+│ - Capture current line number  │
+│ - Capture current function name│
+│ - Capture local and global vars│
+│ - Capture call stack info      │
+│ - Store this info in JSON      │
+│   trace record                 │
+└───────────────┬───────────────┘
+                │
+                ▼
+┌───────────────────────────────┐
+│ Check if execution is complete │
+│ - If no, continue tracing      │
+│ - If yes, finalize JSON trace  │
+└───────────────┬───────────────┘
+                │
+                ▼
+┌───────────────────────────────┐
+│ Send trace JSON back to backend│
+│ for further processing / LLM   │
+└───────────────┬───────────────┘
+                │
+                ▼
+┌───────────────────────────────┐
+│ Stop tracing and clean up     │
+│ resources                    │
+└───────────────────────────────┘
+
+{
+  "line": <line_number>,
+  "function": "<function_name>",
+  "locals": { ... },
+  "globals": { ... },
+  "call_stack": [ ... ]
+}

@@ -1,0 +1,52 @@
+┌──────────────────────────────┐
+│ Start: Receive enriched JSON │
+│ trace data from backend API  │
+└───────────────┬──────────────┘
+                │
+                ▼
+┌──────────────────────────────┐
+│ Parse JSON data:             │
+│ - Extract executed lines     │
+│ - Extract variable states    │
+│ - Extract call stack info    │
+└───────────────┬──────────────┘
+                │
+                ▼
+┌──────────────────────────────┐
+│ Initialize visualization     │
+│ - Setup D3.js / Canvas      │
+│ - Prepare UI elements:       │
+│   code editor highlights,   │
+│   variable watches, stack   │
+└───────────────┬──────────────┘
+                │
+                ▼
+┌──────────────────────────────┐
+│ Animate execution line by    │
+│ line:                       │
+│ - Highlight current line    │
+│ - Update variables display  │
+│ - Update call stack display │
+│ - Control playback speed    │
+└───────────────┬──────────────┘
+                │
+                ▼
+┌──────────────────────────────┐
+│ Provide user controls:       │
+│ - Play / Pause               │
+│ - Step forward / backward   │
+│ - Reset animation           │
+└───────────────┬──────────────┘
+                │
+                ▼
+┌──────────────────────────────┐
+│ Sync visualization with      │
+│ user input and backend state │
+│ (e.g. stepping mode vs run)  │
+└───────────────┬──────────────┘
+                │
+                ▼
+┌──────────────────────────────┐
+│ End animation when execution │
+│ trace completes or user stops│
+└──────────────────────────────┘

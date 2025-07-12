@@ -1,0 +1,51 @@
+                   ┌──────────────────────────────┐
+                   │    Receive HTTP Request       │
+                   │   (code + command JSON)       │
+                   └──────────────┬───────────────┘
+                                  │
+                                  ▼
+                   ┌──────────────────────────────┐
+                   │      Preprocessing Code       │
+                   │  (clean, validate syntax)     │
+                   └──────────────┬───────────────┘
+                                  │
+                                  ▼
+                ┌─────────────────────────────────────┐
+                │    Call LLM Pre-execution Checker    │
+                │ (syntax errors, logical errors, tips)│
+                └──────────────┬──────────────────────┘
+                               │
+               ┌───────────────┴───────────────┐
+               │                               │
+          ┌────▼─────┐                  ┌──────▼─────┐
+          │ Errors   │                  │ No Errors  │
+          │ Found    │                  │ Found      │
+          └────┬─────┘                  └────┬───────┘
+               │                               │
+               ▼                               ▼
+   ┌───────────────────────────┐      ┌───────────────────────┐
+   │ Return Error Response to   │      │ Call Tracer Module to  │
+   │ Frontend (JSON with errors)│      │ Execute & Trace Code   │
+   └──────────────┬────────────┘      └────────────┬──────────┘
+                  │                                │
+                  ▼                                ▼
+          ┌────────────────────┐        ┌─────────────────────┐
+          │ End Request Early   │        │ Receive Trace Output │
+          │ (no further steps)  │        └────────────┬────────┘
+          └────────────────────┘                     │
+                                                     ▼
+                                       ┌───────────────────────────┐
+                                       │ Call LLM Explainer Module │
+                                       │  (generate explanations)  │
+                                       └────────────┬──────────────┘
+                                                    │
+                                                    ▼
+                                     ┌─────────────────────────────┐
+                                     │ Combine Trace + Explanation  │
+                                     │ Format JSON Response         │
+                                     └────────────┬────────────────┘
+                                                  │
+                                                  ▼
+                                  ┌─────────────────────────────┐
+                                  │ Send Response Back to Frontend│
+                                  └─────────────────────────────┘
