@@ -53,11 +53,9 @@ cd backend
 
  ```bash
 # windows
-cd backend
 .venv\Scripts\activate
 
 # macOs
-cd backend
 source .venv/bin/activate
 ```
 
