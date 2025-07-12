@@ -49,7 +49,7 @@ cd backend
 > 💡 **TIP (VS Code Users):**  
 > Open `backend/` in VS Code and press `Ctrl+Shift+P` → `Python: Select Interpreter`  
 > to auto-create and select a Python environment.
-> # To Active VS Code Generated Virtual environment
+> #### To Active VS Code Generated Virtual environment
 
  ```bash
 # windows
