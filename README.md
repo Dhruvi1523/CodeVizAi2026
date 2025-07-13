@@ -1,4 +1,4 @@
-# 🚀 CodeVizAi2026 – React + FastAPI Echo App
+# 🚀 CodeVizAi2026 
 
 A minimal full-stack web app using **React (Vite + Tailwind CSS)** for the frontend and **FastAPI** for the backend. This project demonstrates simple API communication by sending and receiving echoed messages.
 
