@@ -74,7 +74,7 @@ source venv/bin/activate
 ### 3. Install backend dependencies:
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirement.txt
 ```
 
 ### 4. Start the FastAPI server:
@@ -111,7 +111,7 @@ npm run dev
 yarn dev
 ```
 
-- The frontend will run at: [http://localhost:3000](http://localhost:3000)
+- The frontend will run at: [http://localhost:5173](http://localhost:5173)
 
 ---
 
