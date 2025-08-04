@@ -1,51 +1,70 @@
                    ┌──────────────────────────────┐
                    │    Receive HTTP Request       │
-                   │   (code + command JSON)       │
-                   └──────────────┬───────────────┘
-                                  │
-                                  ▼
+                   │   (code + commands JSON)      │
+                   │  (e.g., visualize_code: bool, │
+                   │        visualize_complexity: bool) │
+                   └───────────────┬──────────────┘
+                                   │
+                                   ▼
                    ┌──────────────────────────────┐
                    │      Preprocessing Code       │
                    │  (clean, validate syntax)     │
-                   └──────────────┬───────────────┘
-                                  │
-                                  ▼
-                ┌─────────────────────────────────────┐
-                │    Call LLM Pre-execution Checker    │
-                │ (syntax errors, logical errors, tips)│
-                └──────────────┬──────────────────────┘
-                               │
-               ┌───────────────┴───────────────┐
-               │                               │
-          ┌────▼─────┐                  ┌──────▼─────┐
-          │ Errors   │                  │ No Errors  │
-          │ Found    │                  │ Found      │
-          └────┬─────┘                  └────┬───────┘
-               │                               │
-               ▼                               ▼
-   ┌───────────────────────────┐      ┌───────────────────────┐
-   │ Return Error Response to   │      │ Call Tracer Module to  │
-   │ Frontend (JSON with errors)│      │ Execute & Trace Code   │
-   └──────────────┬────────────┘      └────────────┬──────────┘
+                   └───────────────┬──────────────┘
+                                   │
+                                   ▼
+                 ┌─────────────────────────────────────┐
+                 │    Call LLM Pre-execution Checker    │
+                 │ (syntax errors, logical errors, tips)│
+                 └───────────────┬─────────────────────┘
+                                │
+                ┌───────────────┴───────────────┐
+                │                               │
+           ┌────▼─────┐                  ┌──────▼─────┐
+           │ Errors   │                  │ No Errors  │
+           │ Found    │                  │ Found      │
+           └────┬─────┘                  └────┬───────┘
+                │                               │
+                ▼                               ▼
+  ┌───────────────────────────┐      ┌────────────────────────────┐
+  │ Return Error Response to   │      │ Proceed to Processing Tasks │
+  │ Frontend (JSON with errors)│      └─────────────┬──────────────┘
+  └───────────────┬───────────┘                    │
                   │                                │
                   ▼                                ▼
-          ┌────────────────────┐        ┌─────────────────────┐
-          │ End Request Early   │        │ Receive Trace Output │
-          │ (no further steps)  │        └────────────┬────────┘
-          └────────────────────┘                     │
-                                                     ▼
-                                       ┌───────────────────────────┐
-                                       │ Call LLM Explainer Module │
-                                       │  (generate explanations)  │
-                                       └────────────┬──────────────┘
-                                                    │
-                                                    ▼
-                                     ┌─────────────────────────────┐
-                                     │ Combine Trace + Explanation  │
-                                     │ Format JSON Response         │
-                                     └────────────┬────────────────┘
-                                                  │
-                                                  ▼
-                                  ┌─────────────────────────────┐
-                                  │ Send Response Back to Frontend│
-                                  └─────────────────────────────┘
+          ┌────────────────────┐          ┌─────────────────────────┐
+          │ End Request Early   │          │ Launch Requested Tasks  │
+          │ (no further steps)  │          │ in Parallel / Independently│
+          └────────────────────┘          └─────────────┬───────────┘
+                                              │           │
+                           ┌──────────────────┘           └────────────────────┐
+                           │                                               │
+               ┌───────────▼────────────┐                     ┌────────────▼────────────┐
+               │ If visualize_code=true │                     │ If visualize_complexity=true │
+               │ Call Tracer Module      │                     │ Call Complexity Analyzer Module │
+               │ Execute & Trace Code    │                     │ (AST + Rules + Optional LLM)     │
+               └───────────┬────────────┘                     └─────────────┬─────────────┘
+                           │                                              │
+                           ▼                                              ▼
+               ┌───────────────────────┐                     ┌─────────────────────────┐
+               │ Receive Trace Output   │                     │ Receive Complexity Data  │
+               └─────────────┬─────────┘                     └─────────────┬───────────┘
+                             │                                               │
+                             └───────────────────────────────────────────────┘
+                                             │
+                                             ▼
+                        ┌─────────────────────────────────────┐
+                        │ Call LLM Explainer Module (optional) │
+                        │ Generate code explanations            │
+                        └───────────────┬─────────────────────┘
+                                        │
+                                        ▼
+                      ┌────────────────────────────────────────────┐
+                      │ Combine all requested data into unified JSON│
+                      │ {trace, explanations, complexity info, ...} │
+                      └───────────────┬────────────────────────────┘
+                                      │
+                                      ▼
+                          ┌─────────────────────────────┐
+                          │ Send Response to Frontend   │
+                          │ (UI renders available parts)│
+                          └─────────────────────────────┘

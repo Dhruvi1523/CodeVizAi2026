@@ -1,0 +1,43 @@
+          +------------------+
+          |  User Inputs     |
+          |  Python Code     |
+          |  (Monaco Editor) |
+          +--------+---------+
+                   |
+                   v
+          +--------+---------+
+          |   Code Parser     |
+          |  (Python AST)     |
+          |  - ast module     |
+          +--------+---------+
+                   |
+                   v
+          +--------+---------+
+          | Static Analyzer  |
+          | - Custom Python  |
+          | - Checks loops,  |
+          |   recursion, etc |
+          +--------+---------+
+                   |
+                   v
+          +--------+---------+
+          | Rule-Based       |
+          | Complexity Estimator |
+          | - Python logic   |
+          | - Simple heuristics |
+          +--------+---------+
+                   |
+                   v
+          +--------+---------+
+          | Explanation Gen. |
+          | - GPT-3.5/CodeT5 |
+          | - LangChain (opt.)|
+          +--------+---------+
+                   |
+                   v
+          +--------+---------+
+          | Frontend Display |
+          | - React.js       |
+          | - Chart.js (opt) |
+          | - D3.js/Canvas   |
+          +------------------+
