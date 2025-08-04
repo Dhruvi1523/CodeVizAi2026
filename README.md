@@ -1,4 +1,4 @@
-# 🚀 CodeVizAi2026 – React + FastAPI Echo App
+# 🚀 CodeVizAi2026 
 
 A minimal full-stack web app using **React (Vite + Tailwind CSS)** for the frontend and **FastAPI** for the backend. This project demonstrates simple API communication by sending and receiving echoed messages.
 
@@ -74,7 +74,7 @@ source venv/bin/activate
 ### 3. Install backend dependencies:
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirement.txt
 ```
 
 ### 4. Start the FastAPI server:
@@ -111,7 +111,7 @@ npm run dev
 yarn dev
 ```
 
-- The frontend will run at: [http://localhost:3000](http://localhost:3000)
+- The frontend will run at: [http://localhost:5173](http://localhost:5173)
 
 ---
 
