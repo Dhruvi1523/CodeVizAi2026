@@ -1,0 +1,66 @@
++--------------------------+
+|  🧑 User Interface (UI)  |
+|--------------------------|
+| - Select algorithm       |
+| - Provide input (array)  |
+| - Optional: edit code    |
+| - Click "Run"            |
++-----------+--------------+
+            |
+            v
++-----------+--------------+
+|  📦 Algorithm Engine      |
+|--------------------------|
+| JS or Python logic (algo |
+| like bubble sort, merge  |
+| sort, binary search, etc)|
++-----------+--------------+
+            |
+            v
++-----------+--------------+
+| 🧮 Step Generator         |
+|--------------------------|
+| - Compute each step      |
+| - Store states (array,   |
+|   stack, pointers, etc.) |
+| - Format for animation   |
++-----------+--------------+
+            |
+            v
++-----------+--------------+
+| 🎨 Visualization Engine   |
+|--------------------------|
+| - Render array/tree      |
+| - Animate comparisons,   |
+|   swaps, recursions      |
+| - Uses D3.js / Canvas /  |
+|   SVG / React DOM        |
++-----------+--------------+
+            |
+            v
++-----------+--------------+
+| 🔀 Step Navigator         |
+|--------------------------|
+| - Prev / Next buttons    |
+| - Auto-play (timed loop) |
+| - Pause / Reset / Speed  |
++-----------+--------------+
+            |
+            v
++--------------------------+
+|  📺 Display Output        |
+|--------------------------|
+| - Step count             |
+| - Logs (e.g., swapped 2  |
+|   and 5, entered func)   |
+| - Final result shown     |
++--------------------------+
+
+
+| Category                  | Algorithms                                                          |
+| ------------------------- | ------------------------------------------------------------------- |
+| 🔍 Searching              | Linear Search, Binary Search                                        |
+| 🔃 Sorting                | Bubble Sort, Selection Sort, Insertion Sort, Merge Sort, Quick Sort |
+| 📐 Recursion              | Factorial, Fibonacci                                                |
+| 🌲 Trees (optional later) | DFS, BFS, Binary Tree traversal                                     |
+| 🗺️ Graphs (optional later) | DFS, BFS, Dijkstra's algorithm, Prim's algorithm, Kruskal's algorithm |
