@@ -24,7 +24,7 @@ function App() {
   return (
     <Router>
       <Routes>
-        {/* Public routes */}
+        {/* Public route */}
         <Route path="/" element={<ProtectedRoute>
           <HomePage />
         </ProtectedRoute>} />

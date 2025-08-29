@@ -14,7 +14,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Request model
+# Request models
 class CodeInput(BaseModel):
     code: str
 

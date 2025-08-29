@@ -5,7 +5,7 @@ import './j1.css'; // Optional CSS for styling
 const TracerPanel = () => {
   const [code, setCode] = useState(''); // Stores user-entered Python code
   const [traceOutput, setTraceOutput] = useState(null); // Stores trace JSON from backend
-  const [loading, setLoading] = useState(false); // Tracks API call status
+  const [loading, setLoading] = useState(false); // Tracks API call statu
   const [error, setError] = useState(null); // Tracks errors
 
   // Function to call your /trace endpoint
@@ -57,4 +57,4 @@ const TracerPanel = () => {
   );
 };
 
-export default TracerPanel;  
+export default TracerPanel;

@@ -59,7 +59,7 @@
 
 1. first user give code
 2. python.py - on trace router take input code and run_with_trace function invoked and tracer.py is execute
-3.  tracer.py - here, code is traced line by line and convert code into json format
+3.  tracer.py - here, code is traced line by line and convert code into json formats
 
 code :
 1) 

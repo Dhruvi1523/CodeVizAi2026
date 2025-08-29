@@ -3,7 +3,7 @@ import CodeEditor from "./j1";
 export default function TracerTest() {
   const handleRun = (code) => {
     console.log("Code submitted:", code);
-    // 🔗 Later: send this to backend with Axios
+    // Later: send this to backend with Axios
   };
 
   return (

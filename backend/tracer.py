@@ -98,7 +98,7 @@ def run_with_trace(code: str):
     compiled = compile(code, filename, "exec")
     env = {}
 
-    # Load the code into linecache so getline() can find it
+    # Load the code into linecache so getline() can find it's
     lines = code.splitlines(True)
     linecache.cache[filename] = (len(code), None, lines, filename)
 
