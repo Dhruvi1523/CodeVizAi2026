@@ -56,3 +56,112 @@
   "globals": { ... },
   "call_stack": [ ... ]
 }
+
+1. first user give code
+2. python.py - on trace router take input code and run_with_trace function invoked and tracer.py is execute
+3.  tracer.py - here, code is traced line by line and convert code into json format
+
+code :
+1) 
+a = 5
+b = 10
+c = a + b
+print("Sum:", c)
+
+2)
+def square(x):
+    return x * x
+
+y = square(4)
+print(y)
+
+3)
+a = 10
+b = 0
+c = a / b 
+
+4)
+def outer(x):
+    def inner(y):
+        return y * 2
+    return inner(x) + 1
+
+print(outer(5))
+
+5)
+def factorial(n):
+    def multiply(x, y):
+        return x * y
+
+    if n == 0 or n == 1:
+        return 1
+    
+    result = 1
+    for i in range(2, n + 1):
+        result = multiply(result, i)
+    return result
+
+
+def run_program():
+    x = 5
+    y = factorial(x)
+    print("Factorial of", x, "is", y)
+
+
+run_program()
+
+6)
+class Calculator:
+    def _init_(self, name="Calc"):
+        self.name = name
+
+    def add(self, a, b):
+        return a + b
+
+    def multiply(self, a, b):
+        return a * b
+
+
+def fibonacci(n):
+    if n <= 1: 
+        return n
+    return fibonacci(n - 1) + fibonacci(n - 2)
+
+
+def safe_divide(a, b):
+    try:
+        return a / b
+    except ZeroDivisionError as e:
+        return str(e)
+
+
+def run_program():
+    calc = Calculator()
+    x = 5
+    y = 3
+    sum_result = calc.add(x, y)
+    product_result = calc.multiply(x, y)
+
+    fib_result = fibonacci(5)
+    div_result_ok = safe_divide(10, 2)
+    div_result_err = safe_divide(10, 0)
+
+    print("Sum:", sum_result)
+    print("Product:", product_result)
+    print("Fibonacci(5):", fib_result)
+    print("Division 10/2:", div_result_ok)
+    print("Division 10/0:", div_result_err)
+
+
+run_program()
+
+7)
+def factorial(n):
+    result = 1
+    for i in range(1, n + 1):
+        result *= i
+    return result
+
+num = 5
+fact = factorial(num)
+print("Factorial:", fact)
