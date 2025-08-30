@@ -1,37 +1,29 @@
-import { Link } from "react-router-dom";
-import { SignedIn, SignedOut, UserButton} from "@clerk/clerk-react";
+import React from 'react';
+import { Code2, Github } from 'lucide-react';
 
-export default function Navbar() {
-   
+const Navbar: React.FC = () => {
   return (
-    <nav className="flex items-center justify-between px-6 py-4 bg-white shadow-md">
-      {/* Left side - Logo / Home */}
-      <div className="text-xl font-bold text-blue-600">
-        <Link to="/">CodeVizAi</Link>
-      </div>
-
-      {/* Right side - Auth buttons */}
-      <div className="flex items-center gap-4">
-        <SignedIn>
-          {/* Clerk provides profile + sign out */}
-          <UserButton />
-        </SignedIn>
-
-        <SignedOut>
-          <Link
-            to="/sign-in"
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition"
+    <nav className="bg-gray-900 border-b border-gray-800 px-6 py-4">
+      <div className="max-w-7xl mx-auto flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <Code2 className="h-8 w-8 text-blue-500" />
+          <h1 className="text-2xl font-bold text-white">CodVizAI</h1>
+          <span className="text-gray-400 text-sm">DSA Visualizer</span>
+        </div>
+        
+        <div className="flex items-center space-x-4">
+          <a
+            href="https://github.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-gray-400 hover:text-white transition-colors duration-200"
           >
-            Sign In
-          </Link>
-          <Link
-            to="/sign-up"
-            className="px-4 py-2 text-sm font-medium text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 transition"
-          >
-            Sign Up
-          </Link>
-        </SignedOut>
+            <Github className="h-5 w-5" />
+          </a>
+        </div>
       </div>
     </nav>
   );
-}
+};
+
+export default Navbar;
