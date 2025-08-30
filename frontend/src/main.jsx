@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import { ClerkProvider } from "@clerk/clerk-react";
 import { dark, experimental__simple } from "@clerk/themes";
 import "./index.css";
-import App from "./App.jsx";
+import DsaVisualizer from "./DsaVisualizer.jsx"; 
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
@@ -54,7 +54,7 @@ createRoot(document.getElementById("root")).render(
         },
       }}
     >
-      <App />
+      <DsaVisualizer /> {/* Use your DsaVisualizer component here */}
     </ClerkProvider>
   </StrictMode>
 );
