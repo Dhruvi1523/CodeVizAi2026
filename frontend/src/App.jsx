@@ -5,6 +5,7 @@ import HomePage from './pages/HomePage'
 import SignInPage from './pages/SignInPage'
 import SignUpPage from './pages/SignUpPage'
 import TracerPanel from './j1/TracerTest'
+import FlowChartGeneratorPage from './pages/FlowChartGeneratorPage'
 
 // ProtectedRoute wrapper
 function ProtectedRoute({ children }) {
@@ -25,12 +26,13 @@ function App() {
     <Router>
       <Routes>
         {/* Public route */}
-        <Route path="/" element={<ProtectedRoute>
+        {/* <Route path="/" element={<ProtectedRoute>
           <HomePage />
-        </ProtectedRoute>} />
+        </ProtectedRoute>} /> */}
         <Route path="/sign-in/*" element={<SignInPage />} />
         <Route path="/sign-up/*" element={<SignUpPage />} />
         <Route path="/Tracer/*" element={<TracerPanel />} />
+        <Route path="/flow-chart-generator/*" element={<FlowChartGeneratorPage />} />
       </Routes>
     </Router>
   )
