@@ -1,13 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { AlgorithmStep } from '../types';
 
-interface MergeVisualizationProps {
-  steps: AlgorithmStep[];
-  currentStepIndex: number;
-}
-
-const MergeVisualization: React.FC<MergeVisualizationProps> = ({ steps, currentStepIndex }) => {
+const MergeVisualization = ({ steps, currentStepIndex }) => {
   const currentStep = steps[currentStepIndex] || steps[0];
   
   if (!currentStep) return null;

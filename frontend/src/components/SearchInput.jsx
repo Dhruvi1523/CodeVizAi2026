@@ -1,29 +1,23 @@
 import React, { useState } from 'react';
 import { Search } from 'lucide-react';
 
-interface SearchInputProps {
-  onSearch: (target: number) => void;
-  currentArray: number[];
-  isSearchAlgorithm: boolean;
-}
-
-const SearchInput: React.FC<SearchInputProps> = ({ onSearch, currentArray, isSearchAlgorithm }) => {
+function SearchInput({ onSearch, currentArray, isSearchAlgorithm }) {
   const [searchValue, setSearchValue] = useState('');
   const [error, setError] = useState('');
 
   const handleSearch = () => {
-    const target = parseInt(searchValue);
-    
+    const target = parseInt(searchValue, 10);
+
     if (isNaN(target)) {
       setError('Please enter a valid number');
       return;
     }
-    
+
     setError('');
     onSearch(target);
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
       handleSearch();
     }
@@ -38,11 +32,11 @@ const SearchInput: React.FC<SearchInputProps> = ({ onSearch, currentArray, isSea
 
   return (
     <div className="bg-gray-800 rounded-lg p-4 mb-6">
-      <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
+      <h3 className="text-lg font-semibold text-white mb-3">
         <Search className="h-5 w-5 mr-2 text-blue-400" />
         Search Target
       </h3>
-      
+
       <div className="space-y-3">
         <div className="flex space-x-2">
           <input
@@ -61,24 +55,23 @@ const SearchInput: React.FC<SearchInputProps> = ({ onSearch, currentArray, isSea
             Search
           </button>
         </div>
-        
-        {error && (
-          <div className="text-red-400 text-sm">{error}</div>
-        )}
-        
+
+        {error && <div className="text-red-400 text-sm">{error}</div>}
+
         <button
           onClick={suggestRandomValue}
           className="text-blue-400 hover:text-blue-300 text-sm transition-colors duration-200"
         >
           Use random value from array
         </button>
-        
+
         <div className="text-xs text-gray-400">
           Available values: {currentArray.slice(0, 10).join(', ')}{currentArray.length > 10 ? '...' : ''}
         </div>
       </div>
     </div>
   );
-};
+}
 
 export default SearchInput;
+

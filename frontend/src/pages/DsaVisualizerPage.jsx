@@ -1,15 +1,15 @@
 import React from 'react';
-import Navbar from './components/Navbar';
-import AlgorithmSelector from './components/AlgorithmSelector';
-import ArrayInput from './components/ArrayInput';
-import SearchInput from './components/SearchInput';
-import ControlPanel from './components/ControlPanel';
-import VisualizationContainer from './components/VisualizationContainer';
-import CodeDisplay from './components/CodeDisplay';
-import { useAlgorithmVisualization } from './hooks/useAlgorithmVisualization';
-import { getAlgorithmById } from './data/algorithms';
+import Navbar from '../components/Navbar';
+import AlgorithmSelector from '../components/AlgorithmSelector';
+import ArrayInput from '../components/ArrayInput';
+import SearchInput from '../components/SearchInput';
+import ControlPanel from '../components/ControlPanel';
+import VisualizationContainer from '../components/VisualizationContainer';
+import CodeDisplay from '../components/CodeDisplay';
+import { useAlgorithmVisualization } from '../hooks/useAlgorithmVisualization';
+import { getAlgorithmById } from '../data/algorithms';
 
-function App() {
+function DsaVisualizerPage() {
   const {
     state,
     currentStep,
@@ -94,4 +94,4 @@ function App() {
   );
 }
 
-export default App;
+export default DsaVisualizerPage;

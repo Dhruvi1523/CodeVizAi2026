@@ -1,7 +1,7 @@
 import React from 'react';
 import { Code2, Github } from 'lucide-react';
 
-const Navbar: React.FC = () => {
+function Navbar() {
   return (
     <nav className="bg-gray-900 border-b border-gray-800 px-6 py-4">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -24,6 +24,6 @@ const Navbar: React.FC = () => {
       </div>
     </nav>
   );
-};
+}
 
 export default Navbar;

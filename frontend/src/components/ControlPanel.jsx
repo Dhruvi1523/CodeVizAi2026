@@ -1,33 +1,21 @@
 import React from 'react';
 import { Play, Pause, Square, SkipForward, RefreshCw, Shuffle } from 'lucide-react';
 
-interface ControlPanelProps {
-  isPlaying: boolean;
-  onPlay: () => void;
-  onPause: () => void;
-  onStep: () => void;
-  onReset: () => void;
-  onGenerateArray: () => void;
-  speed: number;
-  onSpeedChange: (speed: number) => void;
-  arraySize: number;
-  onArraySizeChange: (size: number) => void;
-  canStep: boolean;
-}
+function ControlPanel(props) {
+  const {
+    isPlaying,
+    onPlay,
+    onPause,
+    onStep,
+    onReset,
+    onGenerateArray,
+    speed,
+    onSpeedChange,
+    arraySize,
+    onArraySizeChange,
+    canStep,
+  } = props;
 
-const ControlPanel: React.FC<ControlPanelProps> = ({
-  isPlaying,
-  onPlay,
-  onPause,
-  onStep,
-  onReset,
-  onGenerateArray,
-  speed,
-  onSpeedChange,
-  arraySize,
-  onArraySizeChange,
-  canStep,
-}) => {
   return (
     <div className="bg-gray-800 rounded-lg p-6 mb-6">
       <div className="flex flex-wrap items-center gap-4 mb-4">
@@ -101,6 +89,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       </div>
     </div>
   );
-};
+}
 
 export default ControlPanel;

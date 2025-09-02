@@ -2,23 +2,12 @@ import React from 'react';
 import { getAlgorithmById } from '../data/algorithms';
 import BarVisualization from './BarVisualization';
 import MergeVisualization from './MergeVisualization';
-import { AlgorithmStep } from '../types';
 
-interface VisualizationContainerProps {
-  algorithmId: string;
-  steps: AlgorithmStep[];
-  currentStepIndex: number;
-  currentStep: AlgorithmStep | null;
-}
 
-const VisualizationContainer: React.FC<VisualizationContainerProps> = ({
-  algorithmId,
-  steps,
-  currentStepIndex,
-  currentStep,
-}) => {
+const VisualizationContainer = (props) => {
+  const { algorithmId, steps, currentStepIndex, currentStep } = props;
   const algorithm = getAlgorithmById(algorithmId);
-  
+
   if (!algorithm || !currentStep) {
     return (
       <div className="bg-gray-800 rounded-lg h-96 flex items-center justify-center">

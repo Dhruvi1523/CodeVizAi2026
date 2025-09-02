@@ -6,7 +6,7 @@ import SignInPage from './pages/SignInPage'
 import SignUpPage from './pages/SignUpPage'
 import TracerPanel from './j1/TracerTest'
 import FlowChartGeneratorPage from './pages/FlowChartGeneratorPage'
-import DsaVisualizer from './DsaVisualizer'; // 
+import DsaVisualizerPage from './pages/DsaVisualizerPage'
 
 // ProtectedRoute wrapper
 function ProtectedRoute({ children }) {
@@ -40,12 +40,7 @@ function App() {
           </ProtectedRoute>
         } />
        
-        {/* DSA Visualizer protected route */}
-        <Route path="/visualizer" element={
-          <ProtectedRoute>
-            <DsaVisualizer />
-          </ProtectedRoute>
-        } />
+        <Route path="/visualizer" element={<DsaVisualizerPage />} />
       </Routes>
     </Router>
   );

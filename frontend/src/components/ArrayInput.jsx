@@ -1,18 +1,13 @@
 import React, { useState } from 'react';
 import { Edit3, Check, X } from 'lucide-react';
 
-interface ArrayInputProps {
-  currentArray: number[];
-  onArrayChange: (array: number[]) => void;
-}
-
-const ArrayInput: React.FC<ArrayInputProps> = ({ currentArray, onArrayChange }) => {
+function ArrayInput(props) {
   const [isEditing, setIsEditing] = useState(false);
-  const [inputValue, setInputValue] = useState(currentArray.join(', '));
+  const [inputValue, setInputValue] = useState(props.currentArray.join(', '));
   const [error, setError] = useState('');
 
   const handleEdit = () => {
-    setInputValue(currentArray.join(', '));
+    setInputValue(props.currentArray.join(', '));
     setIsEditing(true);
     setError('');
   };
@@ -40,7 +35,7 @@ const ArrayInput: React.FC<ArrayInputProps> = ({ currentArray, onArrayChange }) 
         return;
       }
 
-      onArrayChange(values);
+      props.onArrayChange(values);
       setIsEditing(false);
       setError('');
     } catch (err) {
@@ -49,12 +44,12 @@ const ArrayInput: React.FC<ArrayInputProps> = ({ currentArray, onArrayChange }) 
   };
 
   const handleCancel = () => {
-    setInputValue(currentArray.join(', '));
+    setInputValue(props.currentArray.join(', '));
     setIsEditing(false);
     setError('');
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
       handleSave();
     } else if (e.key === 'Escape') {
@@ -115,9 +110,9 @@ const ArrayInput: React.FC<ArrayInputProps> = ({ currentArray, onArrayChange }) 
         </div>
       ) : (
         <div className="bg-gray-700 rounded-lg p-3">
-          <div className="text-gray-300 text-sm mb-2">Current Array ({currentArray.length} elements):</div>
+          <div className="text-gray-300 text-sm mb-2">Current Array ({props.currentArray.length} elements):</div>
           <div className="flex flex-wrap gap-1">
-            {currentArray.map((value, index) => (
+            {props.currentArray.map((value, index) => (
               <span
                 key={index}
                 className="bg-blue-600 text-white px-2 py-1 rounded text-xs font-medium"
