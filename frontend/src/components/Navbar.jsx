@@ -4,34 +4,34 @@ import { SignedIn, SignedOut, UserButton} from "@clerk/clerk-react";
 export default function Navbar() {
    
   return (
-    <nav className="flex items-center justify-between px-6 py-4 bg-white shadow-md">
-      {/* Left side - Logo / Home */}
-      <div className="text-xl font-bold text-blue-600">
-        <Link to="/">CodeVizAi</Link>
-      </div>
+    
+      <nav className="bg-[#0f172a] px-6 py-4 shadow-md">
+        <div className="container mx-auto flex items-center justify-between">
+          {/* Logo */}
+          <div className="flex items-center space-x-2">
+            <span className="text-2xl">💻</span>
+            <span className="text-xl font-bold">CodeVizAI</span>
+          </div>
 
-      {/* Right side - Auth buttons */}
-      <div className="flex items-center gap-4">
-        <SignedIn>
-          {/* Clerk provides profile + sign out */}
-          <UserButton />
-        </SignedIn>
+          {/* Nav Links */}
+          <div className="flex space-x-6 text-sm font-medium">
+            {/* <Link to="/" className="hover:text-blue-400">Home</Link> */}
+            {/* <a href="#editor" className="hover:text-blue-400 transition">Code Editor</a>
+            <a href="#visualizer" className="hover:text-blue-400 transition">DSA Visualizer</a>
+            <a href="#complexity" className="hover:text-blue-400 transition">Complexity</a>
+            <a href="#flowchart" className="hover:text-blue-400 transition">Flowchart</a>
+            <a href="#explanation" className="hover:text-blue-400 transition">Explanation</a> */}
+          </div>
 
-        <SignedOut>
-          <Link
-            to="/sign-in"
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition"
-          >
-            Sign In
-          </Link>
-          <Link
-            to="/sign-up"
-            className="px-4 py-2 text-sm font-medium text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 transition"
-          >
-            Sign Up
-          </Link>
-        </SignedOut>
+          <div className="flex space-x-4">
+        <Link to="/sign-in" className="px-3 py-1 rounded-md border border-gray-400 hover:bg-blue-500 hover:text-white">
+          Sign In
+        </Link>
+        <Link to="/sign-up" className="px-3 py-1 rounded-md bg-blue-600 text-white hover:bg-blue-700">
+          Sign Up
+        </Link>
       </div>
-    </nav>
+        </div>
+      </nav>
   );
 }

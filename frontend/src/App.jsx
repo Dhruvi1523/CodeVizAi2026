@@ -5,6 +5,8 @@ import HomePage from './pages/HomePage'
 import SignInPage from './pages/SignInPage'
 import SignUpPage from './pages/SignUpPage'
 import TracerPanel from './j1/TracerTest'
+import { Home } from 'lucide-react'
+import CodePage from './pages/CodePage'
 
 // ProtectedRoute wrapper
 function ProtectedRoute({ children }) {
@@ -25,12 +27,14 @@ function App() {
     <Router>
       <Routes>
         {/* Public route */}
-        <Route path="/" element={<ProtectedRoute>
+        {/* <Route path="/" element={<ProtectedRoute>
           <HomePage />
-        </ProtectedRoute>} />
+        </ProtectedRoute>} /> */}
+        <Route path="/" element={<HomePage/>} />
         <Route path="/sign-in/*" element={<SignInPage />} />
         <Route path="/sign-up/*" element={<SignUpPage />} />
         <Route path="/Tracer/*" element={<TracerPanel />} />
+        <Route path='/code' element={<CodePage/>} />
       </Routes>
     </Router>
   )
