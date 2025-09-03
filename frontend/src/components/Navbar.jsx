@@ -1,8 +1,7 @@
-import { Link } from "react-router-dom";
-import { SignedIn, SignedOut, UserButton} from "@clerk/clerk-react";
+import React from 'react';
+import { Code2, Github } from 'lucide-react';
 
-export default function Navbar() {
-   
+function Navbar() {
   return (
     
       <nav className="bg-[#0f172a] px-6 py-4 shadow-md">
@@ -35,3 +34,5 @@ export default function Navbar() {
       </nav>
   );
 }
+
+export default Navbar;
