@@ -1,26 +1,24 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import axios from "axios";
 import ReactFlow, {
     MiniMap,
     Controls,
-    Background,
-    useEdgesState,
+Background,
     useNodesState,
+    useEdgesState,
     MarkerType,
 } from "reactflow";
 import "reactflow/dist/style.css";
 import dagre from "dagre";
 
-// --- Dagre layout function (no changes needed) ---
+// ✅ This function uses Dagre to automatically position the nodes.
 const getLayoutedElements = (nodes, edges, direction = 'TB') => {
     const dagreGraph = new dagre.graphlib.Graph();
-    dagreGraph.setGraph({ rankdir: direction, nodesep: 50, ranksep: 50 });
     dagreGraph.setDefaultEdgeLabel(() => ({}));
+    dagreGraph.setGraph({ rankdir: direction, nodesep: 50, ranksep: 50 });
 
     nodes.forEach((node) => {
-        // Give more space to nodes with more text
-        const width = 150 + Math.max(0, (node.data.label.length - 20) * 5);
-        dagreGraph.setNode(node.id, { width, height: 50 });
+        dagreGraph.setNode(node.id, { width: 200, height: 50 });
     });
 
     edges.forEach((edge) => {
@@ -33,8 +31,8 @@ const getLayoutedElements = (nodes, edges, direction = 'TB') => {
         const nodeWithPosition = dagreGraph.node(node.id);
         if (nodeWithPosition) {
             node.position = {
-                x: nodeWithPosition.x - nodeWithPosition.width / 2,
-                y: nodeWithPosition.y - nodeWithPosition.height / 2,
+                x: nodeWithPosition.x - 100, // half of width
+                y: nodeWithPosition.y - 25,  // half of height
             };
         }
     });
@@ -42,192 +40,158 @@ const getLayoutedElements = (nodes, edges, direction = 'TB') => {
     return { nodes, edges };
 };
 
-// ✅ NEW: Custom hook to handle styling and layout logic
-const useFlowchartStyling = () => {
-    const styleStaticFlowchart = useCallback((data) => {
-        const styledEdges = data.edges.map(e => ({
-            ...e,
-            type: "smoothstep",
-            animated: e.label === "True" || e.label === "False",
-            markerEnd: { type: MarkerType.ArrowClosed },
-            style: {
-                strokeWidth: 2,
-                stroke: e.label === "True" || e.label === "False" ? "#f97316" : "#334155",
-            },
-        }));
-        return getLayoutedElements(data.nodes, styledEdges);
-    }, []);
+// ✅ This function parses the flowchart.js syntax and applies styles
+const parseAndStyleFlowchart = (syntax) => {
+    const nodeDefinitions = new Map();
+    const edges = [];
+    
+    // Define our color scheme for different node types
+    const styleMap = {
+        operation:  { backgroundColor: '#93c5fd', color: '#1a202c' },
+        condition:  { backgroundColor: '#fcd34d', color: '#1a202c' },
+        start:      { backgroundColor: '#86efac', color: '#1a202c' },
+        end:        { backgroundColor: '#86efac', color: '#1a202c' },
+        subroutine: { backgroundColor: '#d8b4fe', color: '#1a202c' },
+        inputoutput:{ backgroundColor: '#fdba74', color: '#1a202c' },
+    };
 
-    const styleExecutionTrace = useCallback((data) => {
-        const traceNodes = data.trace.map((item, index) => ({
-            id: `trace-${index}`,
-            data: { label: `Line ${item.line_no}: ${item.func_name}` },
-            position: { x: 0, y: 0 },
-            style: { background: "#10b981", color: "white" }
-        }));
-        const traceEdges = data.trace.slice(1).map((_, index) => ({
-            id: `e-trace-${index}-${index+1}`,
-            source: `trace-${index}`,
-            target: `trace-${index+1}`,
-            type: "smoothstep",
-            markerEnd: { type: MarkerType.ArrowClosed }
-        }));
-        return getLayoutedElements(traceNodes, traceEdges);
-    }, []);
+    const lines = syntax.split('\n').filter(line => line.trim() !== '');
 
-    return { styleStaticFlowchart, styleExecutionTrace };
+    // First pass: define nodes
+    lines.forEach(line => {
+        if (line.includes('=>')) {
+            const [idAndType, label] = line.split(':');
+            const [id, type] = idAndType.split('=>');
+            const nodeId = id.trim();
+            const nodeType = type.trim();
+
+            nodeDefinitions.set(nodeId, {
+                id: nodeId,
+                data: { label: label.trim() },
+                position: { x: 0, y: 0 },
+                style: styleMap[nodeType] || {}, // Apply style from our map
+            });
+        }
+    });
+
+    // Second pass: define edges
+    lines.forEach(line => {
+        if (line.includes('->')) {
+            const parts = line.split('->');
+            for (let i = 0; i < parts.length - 1; i++) {
+                let source = parts[i].trim();
+                const target = parts[i + 1].trim();
+                let label = null;
+
+                const match = source.match(/(\w+)\((.+)\)/);
+                if (match) {
+                    source = match[1];
+                    label = match[2];
+                }
+
+                if (nodeDefinitions.has(source) && nodeDefinitions.has(target)) {
+                    edges.push({
+                        id: `e-${source}-${target}-${i}`,
+                        source,
+                        target,
+                        label,
+                        type: 'smoothstep',
+                        markerEnd: { type: MarkerType.ArrowClosed },
+                        style: { stroke: '#a78bfa', strokeWidth: 2 },
+                    });
+                }
+            }
+        }
+    });
+    
+    return { nodes: Array.from(nodeDefinitions.values()), edges };
 };
 
-
 function FlowchartGenerator() {
-    const [input, setInput] = useState({ code: "", lang: "python" });
+    // ✅ Reintroduce state for nodes and edges for React Flow
     const [nodes, setNodes, onNodesChange] = useNodesState([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-    const [status, setStatus] = useState("idle");
-    const [jobId, setJobId] = useState(null);
-    const [errorMessage, setErrorMessage] = useState("");
-    const [analysisType, setAnalysisType] = useState("static");
     
-    // ✅ Use the new custom hook
-    const { styleStaticFlowchart, styleExecutionTrace } = useFlowchartStyling();
+    const [input, setInput] = useState({ code: "score = 85\n\nif score >= 90:\n    print('This is an excellent Grade: A')\nelif score >= 80:\n    print('This is a good Grade: B')\nelif score >= 70:\n    print('This is a satisfactory Grade: C')\nelse:\n    print('This is Grade: F')" });
+    const [status, setStatus] = useState("idle");
+    const [errorMessage, setErrorMessage] = useState("");
 
     const handleGenerate = async () => {
         if (!input.code.trim()) {
             alert("Please paste some code first!");
             return;
         }
-        setStatus("pending");
-        setJobId(null);
+        setStatus("loading");
         setErrorMessage("");
-        setNodes([]);
-        setEdges([]);
 
-        if (analysisType === "static") {
-            handleStaticAnalysis();
-        } else {
-            handleExecutionTrace();
-        }
-    };
-
-    const handleStaticAnalysis = async () => {
         try {
-            const res = await axios.post("http://localhost:8000/submit", input);
-            setJobId(res.data.jobId);
-        } catch (err) {
-            console.error("Submission error:", err);
-            setStatus("error");
-            setErrorMessage("Failed to submit job to the backend.");
-        }
-    };
+            const res = await axios.post("http://localhost:8000/generate", {
+                code: input.code,
+                lang: 'python'
+            });
+            
+            // ✅ NEW WORKFLOW: Parse -> Layout -> Set
+            // 1. Parse the text syntax and apply styles
+            const parsedData = parseAndStyleFlowchart(res.data.flowchart_code);
+            // 2. Use Dagre to calculate node positions
+            const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(parsedData.nodes, parsedData.edges);
 
-    const handleExecutionTrace = async () => {
-        try {
-            const res = await axios.post("http://localhost:8000/trace", input);
-            const { nodes: layoutedNodes, edges: layoutedEdges } = styleExecutionTrace(res.data);
             setNodes(layoutedNodes);
             setEdges(layoutedEdges);
-            setStatus('success');
+            setStatus("success");
+
         } catch (err) {
-            console.error("Trace error:", err);
+            console.error("Generation error:", err);
             setStatus("error");
-            setErrorMessage(err.response?.data?.detail || "Failed to get execution trace.");
+            setErrorMessage(err.response?.data?.detail || "Failed to generate flowchart.");
         }
     };
-
-    useEffect(() => {
-        if (status !== 'pending' || !jobId) return;
-
-        const intervalId = setInterval(async () => {
-            try {
-                const res = await axios.get(`http://localhost:8000/status/${jobId}`);
-                if (res.data.status === 'success') {
-                    clearInterval(intervalId);
-                    const { nodes: layoutedNodes, edges: layoutedEdges } = styleStaticFlowchart(res.data.result);
-                    setNodes(layoutedNodes);
-                    setEdges(layoutedEdges);
-                    setStatus('success');
-                } else if (res.data.status === 'failed') {
-                    clearInterval(intervalId);
-                    setStatus('error');
-                    setErrorMessage(res.data.error || "An unknown error occurred.");
-                }
-            } catch (err) {
-                clearInterval(intervalId);
-                setStatus('error');
-                setErrorMessage("Could not retrieve job status.");
-                console.error("Polling error:", err);
-            }
-        }, 2000);
-
-        return () => clearInterval(intervalId);
-    }, [status, jobId, setNodes, setEdges, setStatus, setErrorMessage, styleStaticFlowchart]);
     
-    const onConnect = useCallback((params) => setEdges((eds) => [...eds, { ...params }]), [setEdges]);
-
     const getDisplayMessage = () => {
         switch (status) {
-            case 'pending': return "Analyzing code...";
+            case 'loading': return "Analyzing code...";
             case 'error': return `Error: ${errorMessage}`;
             default: return 'Paste code and click "Generate"';
         }
     };
 
     return (
-        <div className="flex h-screen font-sans">
-            <div className="w-1/3 p-4 bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white flex flex-col">
-                <h1 className="text-2xl font-bold mb-4 text-blue-600 dark:text-blue-400">CodeFlow</h1>
-                
-                <div className="mb-4">
-                    <label className="block mb-2 font-semibold text-sm">Analysis Type</label>
-                    <div className="flex rounded-md shadow-sm">
-                        <button onClick={() => setAnalysisType('static')} className={`px-4 py-2 rounded-l-md w-1/2 transition-colors ${analysisType === 'static' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-800'}`}>
-                            Static Flowchart
-                        </button>
-                        <button onClick={() => setAnalysisType('trace')} className={`px-4 py-2 rounded-r-md w-1/2 transition-colors ${analysisType === 'trace' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-800'}`}>
-                            Execution Trace
-                        </button>
-                    </div>
-                </div>
-
-                <label className="block mb-2 font-semibold text-sm">Language</label>
-                <select value={input.lang} onChange={(e) => setInput({ ...input, lang: e.target.value })} className="w-full p-2 border rounded mb-4 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700">
-                    <option value="python">Python</option>
-                </select>
-
-                <label className="block mb-2 font-semibold text-sm">Code</label>
+        <div className="flex h-screen font-sans bg-gray-900 text-white">
+            <div className="w-1/3 p-4 bg-gray-800 flex flex-col border-r border-gray-700">
+                <h1 className="text-2xl font-bold mb-4 text-blue-400">CodeFlow (React Flow)</h1>
+                <label className="block mb-2 font-semibold text-sm text-gray-400">Python Code</label>
                 <textarea
                     rows="12"
                     value={input.code}
                     onChange={(e) => setInput({ ...input, code: e.target.value })}
-                    className="w-full p-2 border rounded mb-4 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 flex-grow font-mono text-sm"
-                    placeholder="Paste your code here..."
+                    className="w-full p-2 border rounded mb-4 bg-gray-900 border-gray-600 flex-grow font-mono text-sm text-gray-200"
+                    placeholder="Paste your Python code here..."
                 />
-
                 <button
                     onClick={handleGenerate}
-                    disabled={status === "pending"}
-                    className="w-full mt-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded disabled:bg-blue-400 disabled:cursor-not-allowed transition-colors"
+                    disabled={status === "loading"}
+                    className="w-full mt-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 font-bold rounded disabled:bg-blue-400 disabled:cursor-not-allowed transition-colors"
                 >
-                    {status === "pending" ? "Generating..." : "Generate"}
+                    {status === "loading" ? "Generating..." : "Generate Flowchart"}
                 </button>
             </div>
 
-            <div className="w-2/3 bg-gray-50 dark:bg-gray-800">
+            <div className="w-2/3">
+                {/* ✅ The main renderer is now the ReactFlow component */}
                 {status === 'success' && nodes.length > 0 ? (
                     <ReactFlow
                         nodes={nodes}
                         edges={edges}
                         onNodesChange={onNodesChange}
                         onEdgesChange={onEdgesChange}
-                        onConnect={onConnect}
                         fitView
                     >
-                        <MiniMap nodeColor={(n) => n.style?.background || "#6366f1"} />
+                        <MiniMap nodeColor={(n) => n.style.backgroundColor || '#ddd'} />
                         <Controls />
-                        <Background gap={16} color="#e2e8f0" />
+                        <Background color="#4b5563" />
                     </ReactFlow>
                 ) : (
-                    <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
+                    <div className="w-full h-full flex items-center justify-center text-gray-500">
                         <p className="text-lg">{getDisplayMessage()}</p>
                     </div>
                 )}

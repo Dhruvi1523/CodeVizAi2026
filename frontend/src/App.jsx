@@ -7,6 +7,9 @@ import SignUpPage from './pages/SignUpPage'
 import TracerPanel from './j1/TracerTest'
 import FlowChartGeneratorPage from './pages/FlowChartGeneratorPage'
 import DsaVisualizerPage from './pages/DsaVisualizerPage'
+import DPVisualization from './pages/DpVisualizationPage';
+import DynamicProgramingPage from './pages/DynamicProgramingPage';
+import DpVisualizationPage from './pages/DpVisualizationPage';
 
 // ProtectedRoute wrapper
 function ProtectedRoute({ children }) {
@@ -40,7 +43,8 @@ function App() {
           </ProtectedRoute>
         } />
        
-        <Route path="/visualizer" element={<DsaVisualizerPage />} />
+        <Route path="/dp" element={<DynamicProgramingPage />} />
+        <Route path="/dp/:algoId" element={<DpVisualizationPage />} />
       </Routes>
     </Router>
   );
