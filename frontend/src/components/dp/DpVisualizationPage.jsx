@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
-import { DP_ALGORITHMS } from "../data/dp_algorithms";
-import { parseInputs } from "../utils/input_parser";
-import ControlDeck from "../components/dp/ControlDeck";
-import DPGrid from "../components/dp/DPGrid";
-import DPArray from "../components/dp/DPArray";
-import Variables from "../components/dp/Variables";
-import RecursionTree from "../components/dp/RecursionTree";
-import MemoTable from "../components/dp/MemoTable";
+import { DP_ALGORITHMS } from "../../data/dp_algorithms";
+import { parseInputs } from "../../utils/input_parser";
+import ControlDeck from "./ControlDeck";
+import DPGrid from "./DPGrid";
+import DPArray from "./DPArray";
+import Variables from "./Variables";
+import RecursionTree from "./RecursionTree";
+import MemoTable from "./MemoTable";
 
 // Component map for dynamic rendering
 const vizComponents = {
@@ -89,7 +89,7 @@ export default function DpVisualizationPage() {
     <div className="p-4 sm:p-6 bg-gray-950 min-h-screen text-white flex flex-col gap-4">
       {/* --- SECTION 1: Minimalist Header --- */}
       <header className="flex items-center gap-4">
-          <Link to="/dp" className="text-blue-400 hover:underline">&larr; Back to Algorithms</Link>
+          <Link to="/dynamic-programming" className="text-blue-400 hover:underline">&larr; Back to Algorithms</Link>
           <div className="w-px h-6 bg-gray-700"></div>
           <h1 className="text-2xl font-bold text-gray-200">
             {DP_ALGORITHMS[algoId]?.name}

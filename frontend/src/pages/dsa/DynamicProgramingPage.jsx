@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { DP_ALGORITHMS } from '../data/dp_algorithms';
-import ProblemDetailModal from '../components/dp/ProblemDetailModal';
+import { DP_ALGORITHMS } from '../../data/dp_algorithms';
+import ProblemDetailModal from '../../components/dp/ProblemDetailModal';
 
 export default function DynamicProgramingPage() {
   const [detailsModalAlgoId, setDetailsModalAlgoId] = useState(null);
@@ -26,7 +26,7 @@ export default function DynamicProgramingPage() {
                     Problem
                 </button>
                 <Link
-                  to={`/dp/${id}`}
+                  to={`/dynamic-programming/${id}`}
                   className="flex-1 text-center bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
                 >
                   Visualize

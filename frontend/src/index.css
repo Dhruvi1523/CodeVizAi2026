@@ -4,3 +4,12 @@
 body {
     background-color: #0f172a;
 }
+/* For Monaco Editor line highlighting */
+.highlight-line {
+  background-color: #3b82f633; /* A semi-transparent blue */
+  margin-left: 3px !important; /* Ensures the highlight touches the line numbers */
+}
+.highlight-error {
+  background-color: #ef444440; /* A semi-transparent red */
+  margin-left: 3px !important;
+}

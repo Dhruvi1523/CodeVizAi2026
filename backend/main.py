@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from routers import flowchart, dp_visualizer 
+from routers import flowchart, dp_visualizer, tracer
 
 # --- FastAPI App Initialization ---
 app = FastAPI()
@@ -17,6 +17,7 @@ app.add_middleware(
 
 app.include_router(flowchart.router, tags=["Flowchart Generator"])
 app.include_router(dp_visualizer.router, prefix="/api", tags=["DP Visualizer"])
+app.include_router(tracer.router, tags=["Trace Code"])
 
 @app.get("/")
 def read_root():

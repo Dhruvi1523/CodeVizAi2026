@@ -1,114 +1,91 @@
 import sys
-import linecache
+import io
 
-#it's global list stores all tracing events as dictionarie
-trace_data = []
+import sys
+import io
+import copy
 
-#convert arbitary python values into JSON
-def safe_serialize(value, maxlen=120):
-    """Convert any Python object to a JSON-safe, readable form."""
-    try:
-        if isinstance(value, (int, float, str, bool, type(None))):
-            s = str(value)
-            return s if len(s) <= maxlen else s[:maxlen] + "..."
+def run_with_trace(code_str: str):
+    """Executes Python code and captures a step-by-step trace including the call stack."""
+    trace_steps = []
+    output_buffer = io.StringIO()
+    call_stack = []
 
-        if callable(value):  # functions, lambdas, methods
-            return f"<function {getattr(value, '_name_', 'lambda')}>"
+    def tracer(frame, event, arg):
+        nonlocal call_stack
+        
+        # --- NEW: Capture call and return events ---
+        if event == "call":
+            func_name = frame.f_code.co_name
+            call_stack.append(func_name)
+        
+        if event == "line":
+            locals_copy = {k: repr(v) for k, v in frame.f_locals.items() if not k.startswith('__')}
+            trace_steps.append({
+                "line": frame.f_lineno,
+                "locals": locals_copy,
+                "stack": copy.deepcopy(call_stack) # Add a snapshot of the stack
+            })
 
-        if isinstance(value, type):  # classes
-            return f"<class {value._name_}>"
+        if event == "return":
+            if call_stack:
+                call_stack.pop()
 
-        if isinstance(value, dict):
-            # show only first 5 items for brevity
-            items = list(value.items())[:5]
-            return {k: safe_serialize(v) for k, v in items} | (
-                {"...": "..."} if len(value) > 5 else {}
-            )
+        return tracer
 
-        if isinstance(value, (list, tuple, set)):
-            seq = list(value)[:5]  # first 5 elements
-            result = [safe_serialize(v) for v in seq]
-            if len(value) > 5:
-                result.append("...")
-            return result if not isinstance(value, tuple) else tuple(result)
-
-        # fallback: stringify safely
-        s = str(value)
-        return s if len(s) <= maxlen else s[:maxlen] + "..."
-    except Exception:
-        return "<unserializable>"
-
-def get_call_stack(frame):
-    stack = []
-    while frame:
-        name = frame.f_code.co_name
-        if name in ("run_asgi", "handle", "run_endpoint_function"):
-            break
-        stack.append(name)
-        frame = frame.f_back
-    return list(reversed(stack))
-
-def tracer(frame, event, arg):
-    if event == "line":
-        trace_data.append({
-            "event": "line",
-            "line": frame.f_lineno,
-            "function": frame.f_code.co_name,
-            "locals": {k: safe_serialize(v) 
-                       for k, v in frame.f_locals.items() 
-                       if k != "_builtins_"},
-            "globals": {k: safe_serialize(v) for k, v in frame.f_globals.items()
-                        if not k.startswith("") and k not in ("sys", "_builtins_")},
-            "call_stack": get_call_stack(frame)
-        })
-    elif event == "return":
-        trace_data.append({
-            "event": "return",
-            "function": frame.f_code.co_name,
-            "return_value": safe_serialize(arg),
-            "locals": {k: safe_serialize(v) 
-                       for k, v in frame.f_locals.items() 
-                       if k != "_builtins_"}
-        })
-    elif event == "call":
-        trace_data.append({
-            "event": "call",
-            "function": frame.f_code.co_name,
-            "locals": {k: safe_serialize(v) 
-                       for k, v in frame.f_locals.items() 
-                       if k != "_builtins_"}
-        })
-    elif event == "exception":
-        exc_type, exc_value, _ = arg
-        trace_data.append({
-            "event": "exception",
-            "function": frame.f_code.co_name,
-            "line": frame.f_lineno,
-            "code": linecache.getline(frame.f_code.co_filename, frame.f_lineno).strip(),
-            "exception_type": exc_type._name_,
-            "message": str(exc_value)
-        })
-    return tracer
-
-def run_with_trace(code: str):
-    global trace_data
-    trace_data = []
-
-    filename = "<user_code>"
-    compiled = compile(code, filename, "exec")
-    env = {}
-
-    # Load the code into linecache so getline() can find it's
-    lines = code.splitlines(True)
-    linecache.cache[filename] = (len(code), None, lines, filename)
-
+    original_stdout = sys.stdout
+    sys.stdout = output_buffer
+    
     sys.settrace(tracer)
+    
     try:
-        exec(compiled, env, env)
+        exec(code_str, {})
     except Exception as e:
-        sys.settrace(None)
-        return {"error": str(e), "trace": trace_data}
+        trace_steps.append({
+            "error": str(e),
+            "line": getattr(e, '__traceback__', None).tb_lineno if hasattr(e, '__traceback__') else None,
+            "stack": copy.deepcopy(call_stack)
+        })
     finally:
         sys.settrace(None)
+        sys.stdout = original_stdout
 
-    return {"trace": trace_data}
+    return {
+        "trace": trace_steps,
+        "output": output_buffer.getvalue()
+    }
+    
+def generate_simple_flowchart(code_str: str):
+    """Generates a simplified Mermaid flowchart from Python code."""
+    flowchart = "graph TD\n"
+    lines = code_str.strip().split('\n')
+    
+    last_node = "Start"
+    node_counter = 0
+    
+    # This is a simplified parser and serves as an example
+    for i, line in enumerate(lines):
+        trimmed_line = line.strip()
+        if not trimmed_line or trimmed_line.startswith('#'):
+            continue
+
+        node_counter += 1
+        node_id = f"N{node_counter}"
+        # Sanitize line for Mermaid syntax
+        sanitized_line = trimmed_line.replace('"', '#quot;')
+
+        if trimmed_line.startswith(('if', 'elif')):
+            condition = sanitized_line.replace(':', '')
+            flowchart += f'    {last_node} --> {node_id}{{{condition}}};\n'
+            # Simplified branching for demonstration
+            last_node = node_id
+        elif trimmed_line.startswith(('for', 'while')):
+            loop_expr = sanitized_line.replace(':', '')
+            flowchart += f'    {last_node} --> {node_id}[Loop: {loop_expr}];\n'
+            last_node = node_id
+        else:
+            flowchart += f'    {last_node} --> {node_id}["{sanitized_line}"];\n'
+            last_node = node_id
+
+    flowchart += f"    {last_node} --> End(End);"
+    return flowchart
