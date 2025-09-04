@@ -1,0 +1,54 @@
+.tracer-panel {
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  max-width: 800px;
+  margin: 20px auto;
+  background: #1e1e1e;
+  color: #f8f8f8;
+  font-family: Arial, sans-serif;
+}
+
+.code-input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #555;
+  border-radius: 4px;
+  background: #2d2d2d;
+  color: #f8f8f8;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.trace-button {
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.trace-button:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+.error {
+  color: red;
+  margin-top: 10px;
+}
+
+.trace-output {
+  margin-top: 20px;
+  background: #121212;
+  padding: 10px;
+  border-radius: 6px;
+}
+
+.json-output {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
