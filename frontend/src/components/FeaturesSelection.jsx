@@ -1,46 +1,41 @@
 import React from 'react';
 
-// --- Correction 1: Added imports for icons ---
-// Assuming icons are from the 'lucide-react' library.
-// You would typically install this with: npm install lucide-react
 import { Code2, BarChart3, GitBranch, Share2 } from 'lucide-react';
-
-// --- Correction 2: Replaced 'Link' for standalone use ---
-// The original code used <Link>, which requires a router (like react-router-dom).
-// For this component to be self-contained, I've replaced it with a standard <a> tag.
-// If you are using a router, you can switch it back to <Link> and import it.
+import { Link } from "react-router-dom";
 
 export default function FeaturesSection() {
-  const features = [
-    {
-      title: "Code Runner",
-      description:
-        "Write, run, and debug code in multiple programming languages with real-time output and AI-powered insights.",
-      icon: <Code2 className="w-6 h-6" />,
-      color: "bg-blue-600",
-    },
-    {
-      title: "Complexity Analyzer",
-      description:
-        "Analyze time and space complexity of your algorithms with detailed reports and visual graphs.",
-      icon: <BarChart3 className="w-6 h-6" />,
-      color: "bg-green-600",
-    },
-    {
-      title: "DSA Visualizer",
-      description:
-        "Visualize data structures and algorithms with interactive animations and step-by-step explanations.",
-      icon: <GitBranch className="w-6 h-6" />,
-      color: "bg-purple-600",
-    },
-    {
-      title: "Flowchart Generator",
-      description:
-        "Generate beautiful flowcharts from your code automatically with AI-powered diagram creation.",
-      icon: <Share2 className="w-6 h-6" />,
-      color: "bg-orange-600",
-    },
-  ];
+
+const features = [
+  {
+    title: "Code Runner",
+    path: "/Code",
+    description: "Write, run, and debug code in multiple programming languages...",
+    icon: <Code2 className="w-6 h-6" />,
+    color: "bg-blue-600",
+  },
+  {
+    title: "Complexity Analyzer",
+    path: "/complexity-analyzer",
+    description: "Analyze time and space complexity...",
+    icon: <BarChart3 className="w-6 h-6" />,
+    color: "bg-green-600",
+  },
+  {
+    title: "DSA Visualizer",
+    path: "/dsa-visualizer",
+    description: "Visualize data structures and algorithms...",
+    icon: <GitBranch className="w-6 h-6" />,
+    color: "bg-purple-600",
+  },
+  {
+    title: "Flowchart Generator",
+    path: "/flowchart-generator",
+    description: "Generate beautiful flowcharts...",
+    icon: <Share2 className="w-6 h-6" />,
+    color: "bg-orange-600",
+  },
+];
+
 
   return (
     <div className="bg-[#0f172a] text-white py-20 px-6 font-sans">
@@ -74,12 +69,15 @@ export default function FeaturesSection() {
             <p className="mt-2 text-gray-400 text-sm leading-relaxed">
               {feature.description}
             </p>
-            <a
-              href="#" // Changed from <Link to="/learn-more">
+            <Link
+              to={feature.path}
               className="mt-4 inline-block text-sm text-indigo-400 hover:text-indigo-300 font-medium group"
             >
-              Learn more <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">&rarr;</span>
-            </a>
+              Learn more{" "}
+              <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
+                &rarr;
+              </span>
+            </Link>
           </div>
         ))}
       </div>
