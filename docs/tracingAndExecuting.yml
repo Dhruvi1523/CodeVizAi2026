@@ -76,9 +76,18 @@ y = square(4)
 print(y)
 
 3)
-a = 10
-b = 0
-c = a / b 
+arr = [10, 20, 30, 40, 50]
+key = 30
+
+found = False
+for i in range(len(arr)):
+    if arr[i] == key:
+        print("Element", key, "found at index", i)
+        found = True
+        break
+
+if not found:
+    print("Element not found")
 
 4)
 def outer(x):
@@ -166,3 +175,13 @@ def factorial(n):
 num = 5
 fact = factorial(num)
 print("Factorial:", fact)
+
+8)
+arr = [5, 15, 25, 35, 45]
+total = 0
+
+for num in arr:
+    total += num
+
+print("Sum of array elements:", total)
+
