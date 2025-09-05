@@ -1,279 +1,169 @@
-import React, { useRef, useState } from "react";
-import { ArrowDownCircle, ArrowUpCircle, RefreshCcw } from "lucide-react";
+import React, { useState, useRef } from "react";
+import { Link } from "react-router-dom";
+import { ArrowDownCircle, ArrowUpCircle, ChevronLeft, RefreshCcw } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
+// --- Visual Node Sub-component (Upgraded with Framer Motion & Arrows) ---
+const VisualNode = ({ value, isLast, listType }) => {
+  // Arrow component for connecting nodes
+  const Arrow = () => {
+    let arrowSymbol = "→";
+    if (listType === 'doubly') arrowSymbol = "⇄";
+    if (isLast && listType === 'circular') arrowSymbol = "↻";
+    if (isLast && (listType === 'singly' || listType === 'doubly')) return null;
+
+    return (
+      <motion.div 
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        className={`text-2xl font-light mx-2 ${isLast && listType === 'circular' ? 'text-[#14b8a6]' : 'text-[#94a3b8]'}`}
+      >
+        {arrowSymbol}
+      </motion.div>
+    );
+  };
+  
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, scale: 0.5 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.2 } }}
+      transition={{ type: "spring", stiffness: 300, damping: 25 }}
+      className="flex items-center"
+    >
+      <div className="bg-[#8b5cf6] text-[#f1f5f9] text-center px-4 py-3 rounded-lg font-bold text-lg shadow-lg flex-shrink-0">
+        {value}
+      </div>
+      <Arrow />
+    </motion.div>
+  );
+};
+
+// --- Main Visualizer Component ---
 export default function LinkedListVisualizer() {
   const [nodes, setNodes] = useState([]);
   const [value, setValue] = useState("");
   const [message, setMessage] = useState("");
   const [isBusy, setIsBusy] = useState(false);
   const [history, setHistory] = useState([]);
-  const [listType, setListType] = useState("singly"); // singly | doubly | circular
+  const [listType, setListType] = useState("singly");
   const nextId = useRef(1);
+
   const ANIM_MS = 300;
 
-  const size = nodes.length;
-
+  // --- Core Logic (Simplified for Framer Motion) ---
   const addHistory = (type, val) => {
-    setHistory((prev) => [{ type, val, id: Date.now() }, ...prev]);
+    setHistory((prev) => [{ type, val, id: Date.now() }, ...prev.slice(0, 9)]);
   };
-
-  // Insert at end
   const handleInsert = () => {
-    if (!value.toString().trim()) {
-      setMessage("Enter a value to insert.");
-      return;
-    }
-    setMessage("");
+    if (!value.trim()) { setMessage("Enter a value to insert."); return; }
+    setIsBusy(true); setMessage("");
     const id = nextId.current++;
-    const node = { id, value: value.toString(), status: "enter" };
-    setNodes((prev) => [...prev, node]);
-    setIsBusy(true);
-
-    setTimeout(() => {
-      setNodes((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, status: "idle" } : n))
-      );
-      setIsBusy(false);
-      addHistory("insert", node.value);
-    }, ANIM_MS);
-
+    const node = { id, value: value.trim() };
+    setNodes((prev) => [...prev, node]); // Insert at end
+    addHistory("insert", node.value);
     setValue("");
+    setTimeout(() => setIsBusy(false), ANIM_MS);
   };
-
-  // Delete from front
   const handleDelete = () => {
-    if (nodes.length === 0) {
-      setMessage("List is empty — nothing to delete.");
-      return;
-    }
-    setMessage("");
-    setIsBusy(true);
-    const removed = nodes[0];
-    setNodes((prev) =>
-      prev.map((n, idx) => (idx === 0 ? { ...n, status: "leave" } : n))
-    );
-
-    setTimeout(() => {
-      setNodes((prev) => prev.slice(1));
-      setIsBusy(false);
-      addHistory("delete", removed.value);
-    }, ANIM_MS);
+    if (nodes.length === 0) { setMessage("List is empty — nothing to delete."); return; }
+    setIsBusy(true); setMessage("");
+    addHistory("delete", nodes[0].value);
+    setNodes((prev) => prev.slice(1)); // Delete from front
+    setTimeout(() => setIsBusy(false), ANIM_MS);
   };
-
-  // Reverse the linked list
   const handleReverse = () => {
-    if (nodes.length === 0) {
-      setMessage("List is empty — cannot reverse.");
-      return;
-    }
-    setMessage("");
-    setIsBusy(true);
-    setTimeout(() => {
-      setNodes((prev) => [...prev].reverse());
-      setIsBusy(false);
-      addHistory("reverse", "list");
-    }, ANIM_MS);
+    if (nodes.length < 2) { setMessage("List needs at least 2 nodes to reverse."); return; }
+    setIsBusy(true); setMessage("");
+    setNodes((prev) => [...prev].reverse());
+    addHistory("reverse", "list");
+    setTimeout(() => setIsBusy(false), ANIM_MS);
   };
-
-  // Reset list
   const handleReset = () => {
-    setMessage("");
-    if (nodes.length === 0) return;
-    setNodes((prev) => prev.map((n) => ({ ...n, status: "leave" })));
-    setIsBusy(true);
-    setTimeout(() => {
-      setNodes([]);
-      setIsBusy(false);
-      setHistory([]);
-    }, ANIM_MS + 40);
+    setIsBusy(true); setMessage(""); setHistory([]); setNodes([]);
+    setTimeout(() => setIsBusy(false), ANIM_MS + 100);
   };
-
-  function VisualNode({ node, isLast }) {
-    const { value: v, status } = node;
-    const baseStyle = {
-      transition: `all ${ANIM_MS}ms cubic-bezier(.2,.9,.2,1)`,
-      minWidth: 70,
-      padding: "12px 0",
-      margin: "6px",
-      textAlign: "center",
-      borderRadius: 8,
-      fontWeight: 700,
-      fontSize: 18,
-      boxShadow: "0 4px 8px rgba(0,0,0,0.25)",
-    };
-
-    const style =
-      status === "enter"
-        ? { ...baseStyle, transform: "translateY(-14px)", opacity: 0 }
-        : status === "leave"
-        ? { ...baseStyle, transform: "translateY(14px)", opacity: 0 }
-        : { ...baseStyle, transform: "translateY(0)", opacity: 1 };
-
-    return (
-      <div className="flex items-center gap-2">
-        <div style={style} className="bg-purple-500 text-white">
-          {v}
-        </div>
-        {/* Link Arrows depending on type */}
-        {!isLast && (
-          <>
-            {listType === "singly" && (
-              <span className="text-xl text-gray-300">→</span>
-            )}
-            {listType === "doubly" && (
-              <span className="text-xl text-gray-300">⇄</span>
-            )}
-          </>
-        )}
-        {/* Circular link arrow if last node */}
-        {isLast && listType === "circular" && (
-          <span className="text-xl text-green-400">↻</span>
-        )}
-      </div>
-    );
-  }
 
   return (
-    <div className="min-h-screen bg-[#0d1117] flex items-center justify-center p-8 text-white">
-      <div className="max-w-7xl w-full">
-        <h1 className="text-3xl font-extrabold mb-2 text-white">
-          Linked List
-        </h1>
-        <h4 className="text-lg font-semibold text-gray-300">
-          Supports Singly, Doubly, Circular, and Reverse.
-        </h4>
-        <br />
-
-        {/* List Type Selector */}
-        <div className="flex gap-3 mb-6">
-          {["singly", "doubly", "circular"].map((t) => (
-            <button
-              key={t}
-              onClick={() => setListType(t)}
-              className={`px-4 py-2 rounded ${
-                listType === t ? "bg-purple-600" : "bg-gray-700"
-              }`}
-            >
-              {t.charAt(0).toUpperCase() + t.slice(1)}
-            </button>
-          ))}
+    <div className="min-h-screen bg-[#0f172a] text-[#f1f5f9] p-4 sm:p-6 lg:p-8 flex flex-col">
+      <div className="bg-[#1e293b] rounded-xl border border-[#334155] flex flex-col flex-grow min-h-0">
+        
+        <div className="flex items-center gap-4 p-4 border-b border-[#334155] flex-shrink-0">
+          <Link to="/dsa-visualizer" className="p-2 text-[#94a3b8] hover:bg-[#334155] hover:text-[#f1f5f9] rounded-full transition-colors" title="Back to Data Structures">
+            <ChevronLeft size={20} />
+          </Link>
+          <div className="w-px h-6 bg-[#334155]"></div>
+          <div>
+            <h1 className="text-2xl font-extrabold text-[#f1f5f9]">Linked List</h1>
+            <p className="text-sm text-[#94a3b8]">A dynamic data structure with nodes connected by pointers.</p>
+          </div>
         </div>
 
-        <div
-          className="bg-[#111827] max-w-6xl w-full grid grid-cols-1 lg:grid-cols-3 gap-8 items-start 
-                     mt-6 px-8 py-6 rounded-xl"
-        >
-          {/* LINKED LIST VISUAL */}
-          <div className="col-span-2 flex flex-col items-center">
-            <div
-              className="relative w-full min-h-[120px] flex flex-row items-center justify-start border border-gray-700 rounded-xl p-4 overflow-x-auto"
-              aria-label="Linked list container"
-            >
-              {nodes.length === 0 ? (
-                <div className="text-gray-400">Empty. Insert to add nodes.</div>
-              ) : (
-                nodes.map((n, idx) => (
-                  <VisualNode
-                    key={n.id}
-                    node={n}
-                    isLast={idx === nodes.length - 1}
-                  />
-                ))
-              )}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6 flex-grow min-h-0">
+          
+          <main className="lg:col-span-2 bg-[#0f172a] rounded-lg p-4 flex flex-col justify-center">
+            <div className="w-full min-h-[150px] border-2 border-[#334155] rounded-lg flex items-center p-4 space-x-2 overflow-x-auto">
+              <AnimatePresence>
+                {nodes.map((node, index) => (
+                  <VisualNode key={node.id} value={node.value} isLast={index === nodes.length - 1} listType={listType} />
+                ))}
+              </AnimatePresence>
+              {nodes.length === 0 && <p className="w-full text-center text-[#94a3b8]">List is empty</p>}
             </div>
-            <div className="mt-4 text-center">
-              <h3 className="text-lg font-semibold">
-                {listType.charAt(0).toUpperCase() + listType.slice(1)} Linked List
-              </h3>
-            </div>
-          </div>
+            <p className="mt-4 text-center text-lg font-semibold text-[#94a3b8]">
+              {listType.charAt(0).toUpperCase() + listType.slice(1)} Linked List
+            </p>
+          </main>
 
-          {/* CONTROL / INFO PANEL */}
-          <div className="bg-[#0b1220] border border-gray-800 rounded-xl p-6 shadow-lg">
-            <div className="mb-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-300">Size:</span>
-                <div className="bg-purple-600 px-3 py-1 rounded font-bold text-sm">
-                  {size}
-                </div>
+          <aside className="h-full overflow-y-auto pr-2">
+            <div>
+              <h3 className="text-md font-medium text-[#94a3b8] mb-2">List Type</h3>
+              <div className="grid grid-cols-3 gap-2">
+                {["singly", "doubly", "circular"].map((t) => (
+                  <button key={t} onClick={() => setListType(t)} className={`px-3 py-2 rounded-md font-semibold text-sm transition-colors ${listType === t ? 'bg-[#6366f1] text-[#f1f5f9]' : 'bg-[#334155] hover:bg-opacity-80'}`}>
+                    {t.charAt(0).toUpperCase() + t.slice(1)}
+                  </button>
+                ))}
               </div>
             </div>
 
-            {/* Input */}
-            <div className="mt-4">
-              <label className="block text-gray-300 text-sm mb-2">Element</label>
-              <input
-                value={value}
-                onChange={(e) => setValue(e.target.value)}
-                placeholder="Enter value"
-                className="w-full px-3 py-2 rounded border border-gray-700 bg-[#071019] text-white focus:outline-none"
-                disabled={isBusy}
-              />
+            <hr className="my-6 border-[#334155]" />
+            
+            <div className="flex items-center justify-between">
+              <span className="font-semibold text-[#94a3b8]">List Size:</span>
+              <code className="bg-[#0f172a] px-3 py-1 rounded-md text-lg font-bold text-[#f1f5f9]">{nodes.length}</code>
             </div>
 
-            {/* Buttons */}
-            <div className="flex gap-3 mt-4">
-              <button
-                onClick={handleInsert}
-                disabled={isBusy}
-                className="flex-1 bg-sky-500 hover:bg-sky-600 text-white px-3 py-2 rounded disabled:opacity-50"
-              >
-                Insert
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={isBusy}
-                className="flex-1 bg-sky-500 hover:bg-sky-600 text-white px-3 py-2 rounded disabled:opacity-50"
-              >
-                Delete
-              </button>
+            <hr className="my-6 border-[#334155]" />
+            
+            <div>
+              <label className="block text-sm font-medium text-[#94a3b8]">Value</label>
+              <input value={value} onChange={(e) => setValue(e.target.value)} placeholder="Enter a value" className="mt-1 w-full px-3 py-2 rounded-md border border-[#334155] bg-[#0f172a] text-[#f1f5f9] focus:outline-none focus:ring-2 focus:ring-[#6366f1]" disabled={isBusy} />
+              <div className="grid grid-cols-2 gap-3 mt-4">
+                <button onClick={handleInsert} disabled={isBusy} className="bg-[#6366f1] hover:opacity-90 text-[#f1f5f9] px-3 py-2 rounded-md font-semibold disabled:opacity-50">Insert</button>
+                <button onClick={handleDelete} disabled={isBusy} className="bg-[#334155] hover:bg-opacity-80 text-[#f1f5f9] px-3 py-2 rounded-md font-semibold disabled:opacity-50">Delete</button>
+                <button onClick={handleReverse} disabled={isBusy} className="bg-[#8b5cf6] hover:opacity-90 text-[#f1f5f9] px-3 py-2 rounded-md font-semibold disabled:opacity-50 flex items-center justify-center gap-2">
+                  <RefreshCcw size={16} /> Reverse
+                </button>
+                <button onClick={handleReset} disabled={isBusy} className="bg-[#ef4444] hover:opacity-90 text-[#f1f5f9] px-3 py-2 rounded-md font-semibold disabled:opacity-50">Reset</button>
+              </div>
             </div>
-            <div className="flex gap-3 mt-3">
-              <button
-                onClick={handleReverse}
-                disabled={isBusy}
-                className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded disabled:opacity-50 flex items-center justify-center gap-1"
-              >
-                <RefreshCcw className="w-4 h-4" /> Reverse
-              </button>
-              <button
-                onClick={handleReset}
-                disabled={isBusy}
-                className="flex-1 bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded disabled:opacity-50"
-              >
-                Reset
-              </button>
-            </div>
-
-            {/* Message */}
-            {message && <div className="mt-4 text-sm text-amber-400">{message}</div>}
-
-            {/* Operation History */}
-            <div className="mt-6 bg-[#111827] border border-gray-800 rounded-lg p-4">
+            
+            {message && <p className="mt-4 text-sm text-[#f59e0b] text-center">{message}</p>}
+            <hr className="my-6 border-[#334155]" />
+            
+            <div>
               <h4 className="text-md font-semibold mb-3">Operation History</h4>
-              {history.length === 0 ? (
-                <p className="text-sm text-gray-500">No operations yet.</p>
-              ) : (
-                <ul className="space-y-1 text-sm">
-                  {history.map((h) => (
-                    <li key={h.id} className="flex items-center gap-2">
-                      {h.type === "insert" ? (
-                        <ArrowDownCircle className="text-green-400 w-4 h-4" />
-                      ) : h.type === "delete" ? (
-                        <ArrowUpCircle className="text-red-400 w-4 h-4" />
-                      ) : (
-                        <RefreshCcw className="text-yellow-400 w-4 h-4" />
-                      )}
-                      <span>
-                        {h.type.charAt(0).toUpperCase() + h.type.slice(1)}:{" "}
-                        {h.val}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
+              <ul className="space-y-2 text-sm text-[#94a3b8] h-32 overflow-y-auto">
+                {history.length > 0 ? history.map((h) => (
+                  <li key={h.id} className="flex items-center gap-2">
+                    {h.type === "insert" ? <ArrowDownCircle className="text-[#14b8a6] w-4 h-4 flex-shrink-0" /> : h.type === 'delete' ? <ArrowUpCircle className="text-[#ef4444] w-4 h-4 flex-shrink-0" /> : <RefreshCcw className="text-[#f59e0b] w-4 h-4 flex-shrink-0" />}
+                    <span>{h.type.charAt(0).toUpperCase() + h.type.slice(1)}: <strong>{h.val}</strong></span>
+                  </li>
+                )) : <li>No operations yet.</li>}
+              </ul>
             </div>
-          </div>
+          </aside>
         </div>
       </div>
     </div>

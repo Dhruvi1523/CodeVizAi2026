@@ -1,17 +1,17 @@
-import { Routes, Route,  Link } from "react-router-dom";
+import { Routes, Route, Link } from "react-router-dom";
 import { SignIn, SignUp } from "@clerk/clerk-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import FeaturesSection from "../components/FeaturesSelection";
+import { ArrowRight, Play } from "lucide-react";
 
-// ------------------ Layout Component (Navbar + Footer) ------------------
 function HomePage() {
   return (
     <div className="flex flex-col min-h-screen bg-[#0f172a] text-gray-200 font-sans">
-      <Navbar/>
+      <Navbar />
       {/* Page Content */}
-      <main className="flex-1 container mx-auto px-6 py-10">
-        <div className="bg-[#0d1117] text-white w-full">
+      <main className="flex-1 container mx-auto ">
+        <div className="bg-[#0f172a] text-white w-full">
           {/* Hero Section */}
           <div className="min-h-screen flex flex-col items-center justify-center px-6  w-full">
             <div className="text-center w-full">
@@ -27,36 +27,55 @@ function HomePage() {
                 flowcharts with AI explanations – all in one platform.
               </p>
 
-              {/* Buttons */}
-              <div className="mt-8 flex justify-center gap-4 ">
-                <Link
-                  to="/code"
-                  className="px-6 py-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow-lg transition"
-                >
-                  ▶ Start Coding
-                </Link>
-                <Link
-                  to="/demo"
-                  className="px-6 py-3 rounded-lg bg-gray-800 hover:bg-gray-700 text-white font-medium shadow-lg transition"
-                >
-                  View Demo
-                </Link>
-              </div>
+              <div className="py-5 flex flex-col sm:flex-row gap-4 justify-center items-center">
+  {/* Primary Button */}
+  <Link
+    to="/code"
+    className="
+      inline-flex items-center justify-center gap-3 px-6 py-3 
+      font-semibold text-[#f1f5f9] bg-[#6366f1] 
+      rounded-lg shadow-lg min-w-[220px] 
+      transition-transform transform hover:scale-105 
+      focus:outline-none focus:ring-2 focus:ring-[#6366f1] focus:ring-offset-2 focus:ring-offset-[#0f172a]
+    "
+  >
+    <Play className="h-5 w-5 fill-current" />
+    <span className="leading-none">Start Coding</span>
+    <ArrowRight className="h-5 w-5" />
+  </Link>
+
+  {/* Secondary Button */}
+  <Link
+    to="/demo"
+    className="
+      inline-flex items-center justify-center px-6 py-3 
+      font-semibold text-[#f1f5f9] bg-[#334155] 
+      rounded-lg shadow-lg min-w-[220px] 
+      transition-colors hover:bg-[#334155] 
+      border border-[#334155]
+      focus:outline-none focus:ring-2 focus:ring-[#6366f1] focus:ring-offset-2 focus:ring-offset-[#0f172a]
+    "
+  >
+    View Demo
+  </Link>
+</div>
             </div>
 
             {/* Stats Section */}
-            <div className="mt-16 grid grid-cols-3 gap-10 text-center">
-              <div>
-                <h2 className="text-3xl font-bold text-indigo-400">10+</h2>
-                <p className="text-gray-400">Languages</p>
-              </div>
-              <div>
-                <h2 className="text-3xl font-bold text-green-400">50+</h2>
-                <p className="text-gray-400">Algorithms</p>
-              </div>
-              <div>
-                <h2 className="text-3xl font-bold text-yellow-400">AI</h2>
-                <p className="text-gray-400">Powered</p>
+            <div className="container mx-auto px-6">
+              <div className="mt-16 grid grid-cols-3 gap-10 text-center pt-8  border-t">
+                <div>
+                  <h2 className="text-3xl font-bold text-indigo-400">10+</h2>
+                  <p className="text-gray-400">Languages</p>
+                </div>
+                <div>
+                  <h2 className="text-3xl font-bold text-green-400">50+</h2>
+                  <p className="text-gray-400">Algorithms</p>
+                </div>
+                <div>
+                  <h2 className="text-3xl font-bold text-yellow-400">AI</h2>
+                  <p className="text-gray-400">Powered</p>
+                </div>
               </div>
             </div>
           </div>
@@ -65,15 +84,9 @@ function HomePage() {
           <FeaturesSection />
         </div>
       </main>
-      <Footer/>
+      <Footer />
     </div>
   );
 }
-
-
-
-
-
-
 
 export default HomePage;

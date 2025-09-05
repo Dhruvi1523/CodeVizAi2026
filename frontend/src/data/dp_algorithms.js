@@ -1,6 +1,8 @@
+import { AlignHorizontalJustifyCenter, Briefcase, CircleDollarSign, BrainCircuit } from 'lucide-react';
 export const DP_ALGORITHMS = {
   lcs: {
     name: 'Longest Common Subsequence',
+    icon: AlignHorizontalJustifyCenter, 
     inputs: [
       { id: 'str1', label: 'String 1', type: 'text' },
       { id: 'str2', label: 'String 2', type: 'text' },
@@ -17,6 +19,7 @@ export const DP_ALGORITHMS = {
   },
   knapsack: {
     name: '0/1 Knapsack',
+     icon: Briefcase, 
     inputs: [
       { id: 'weights', label: 'Weights (comma-sep)', type: 'text' },
       { id: 'values', label: 'Values (comma-sep)', type: 'text' },
@@ -34,6 +37,7 @@ export const DP_ALGORITHMS = {
   },
   'coin-change': {
     name: 'Coin Change',
+    icon: CircleDollarSign, 
     inputs: [
       { id: 'coins', label: 'Coins (comma-sep)', type: 'text' },
       { id: 'amount', label: 'Amount', type: 'number' },

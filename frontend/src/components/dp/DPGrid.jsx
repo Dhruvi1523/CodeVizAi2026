@@ -1,11 +1,8 @@
 import React from 'react';
 
-export default function DPGrid({ steps, n, m, highlightedCell, rowLabels, colLabels }) {
-  // --- FIX IS HERE ---
-  // Initialize the grid with 0 instead of '-'
+export default function DPGrid({ steps, n, m, highlightedCell, rowLabels = [], colLabels = [] }) {
   const grid = Array(n + 1).fill(null).map(() => Array(m + 1).fill(0));
 
-  // Populate the grid with the actual computed values from the steps
   steps.forEach(step => {
     if (step.i >= 0 && step.i <= n && step.j >= 0 && step.j <= m) {
       grid[step.i][step.j] = step.value;
@@ -18,10 +15,10 @@ export default function DPGrid({ steps, n, m, highlightedCell, rowLabels, colLab
         <thead>
           <tr>
             {/* Top-left corner (empty) */}
-            <th className="p-1 border border-gray-700 bg-gray-700 text-gray-300 w-8"></th> 
+            <th className="p-1 border border-[#334155] bg-[#334155] text-[#94a3b8] w-8"></th> 
             {/* Column labels */}
             {colLabels.map((label, index) => (
-              <th key={`col-${index}`} className="p-1 border border-gray-700 bg-gray-700 text-gray-300 w-8">
+              <th key={`col-${index}`} className="p-1 border border-[#334155] bg-[#334155] text-[#94a3b8] w-8">
                 {label}
               </th>
             ))}
@@ -31,18 +28,18 @@ export default function DPGrid({ steps, n, m, highlightedCell, rowLabels, colLab
           {grid.map((row, rIdx) => (
             <tr key={`row-${rIdx}`}>
               {/* Row label */}
-              <th className="p-1 border border-gray-700 bg-gray-700 text-gray-300 w-8">
+              <th className="p-1 border border-[#334155] bg-[#334155] text-[#94a3b8] w-8">
                 {rowLabels[rIdx]}
               </th>
               {/* Grid cells */}
               {row.map((cellValue, cIdx) => (
                 <td
                   key={`cell-${rIdx}-${cIdx}`}
-                  className={`p-1 border border-gray-700 w-8 h-8
+                  className={`p-1 border border-[#334155] w-8 h-8 font-semibold
                     ${highlightedCell && highlightedCell.i === rIdx && highlightedCell.j === cIdx 
-                        ? 'bg-yellow-500 text-black font-bold' 
-                        : 'bg-gray-900 text-white'}
-                    transition-all duration-100
+                        ? 'bg-[#f59e0b] text-[#0f172a]' 
+                        : 'bg-[#1e293b] text-[#f1f5f9]'}
+                    transition-colors duration-150
                   `}
                 >
                   {cellValue}

@@ -1,3 +1,5 @@
+import React from 'react';
+
 export default function DPArray({ steps, highlightedIndex }) {
   return (
     <div className="flex flex-wrap gap-2 p-2">
@@ -5,10 +7,10 @@ export default function DPArray({ steps, highlightedIndex }) {
         const isHighlighted = index === highlightedIndex;
         return (
           <div key={index} className="flex flex-col items-center">
-            <div className={`w-14 h-14 border border-gray-700 flex items-center justify-center rounded font-semibold transition-colors duration-300 ${isHighlighted ? 'bg-yellow-500 text-black' : 'bg-gray-800 text-white'}`}>
+            <div className={`w-14 h-14 border border-[#334155] flex items-center justify-center rounded font-semibold transition-colors duration-300 ${isHighlighted ? 'bg-[#f59e0b] text-[#0f172a]' : 'bg-[#1e293b] text-[#f1f5f9]'}`}>
               {value === Infinity ? '∞' : value}
             </div>
-            <div className="text-xs text-gray-400 mt-1">{index}</div>
+            <div className="text-xs text-[#94a3b8] mt-1">{index}</div>
           </div>
         );
       })}

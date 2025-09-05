@@ -1,36 +1,49 @@
 import React from 'react';
-import { Link } from 'react-router-dom'; // Correct import for Link
-import { Code2, Github } from 'lucide-react';
+import { NavLink, Link } from 'react-router-dom';
+import { Code, BarChart3, GitBranch, Share2, MessageSquareText } from 'lucide-react';
 
+// Define navigation links as an array for easy mapping
+const navLinks = [
+  { to: '/code', icon: <Code size={16} />, label: 'Code Editor' },
+  { to: '/complexity', icon: <BarChart3 size={16} />, label: 'Complexity' },
+  { to: '/dsa-visualizer', icon: <GitBranch size={16} />, label: 'DSA Visualizer' },
+  { to: '/flowchart', icon: <Share2 size={16} />, label: 'Flowchart' },
+  { to: '/explanation', icon: <MessageSquareText size={16} />, label: 'Explanation' },
+];
 
-function Navbar() {
+export default function Navbar() {
+  // Define styles for active and inactive links using hex codes
+  const linkBaseStyle = "flex items-center gap-2 px-4 py-2 rounded-md font-medium transition-colors";
+  const activeLinkStyle = "bg-[#334155] text-[#f1f5f9]"; // --secondary, --foreground
+  const inactiveLinkStyle = "text-[#94a3b8] hover:bg-[#334155] hover:text-[#f1f5f9]"; // --muted-foreground, hover:--muted, hover:--foreground
+
   return (
-    
-      <nav className="bg-[#0f172a] px-6 py-4 shadow-md">
-        <div className="container mx-auto flex items-center justify-between">
-          {/* Logo */}
-          <div className="flex items-center space-x-2">
-            <span className="text-2xl">💻</span>
-            <span className="text-xl font-bold">CodeVizAI</span>
+    <nav className="flex items-center justify-between px-6 py-3 bg-[#1e293b] border-b border-[#334155]">
+      {/* Left Section: Logo and Brand */}
+      <div className="flex items-center gap-4">
+        <Link to="/" className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-[#6366f1] rounded-full flex items-center justify-center">
+            <Code size={18} className="text-[#f1f5f9]" />
           </div>
-
-          {/* Nav Links */}
-          <div className="flex space-x-6 text-sm font-medium">
-            {/* The commented-out links here should also be <Link> components if used for routing */}
-          </div>
-
-          <div className="flex space-x-4">
-        <Link to="/sign-in" className="px-3 py-1 rounded-md border border-gray-400 hover:bg-blue-500 hover:text-white">
-          Sign In
+          <span className="text-xl font-bold text-[#f1f5f9]">CodVizAI</span>
         </Link>
-        <Link to="/sign-up" className="px-3 py-1 rounded-md bg-blue-600 text-white hover:bg-blue-700">
-          Sign Up
-        </Link>
-        
       </div>
-        </div>
-      </nav>
+
+      {/* Middle Section: Navigation Links */}
+      <div className="hidden md:flex items-center gap-2">
+        {navLinks.map((link) => (
+          <NavLink
+            key={link.to}
+            to={link.to}
+            className={({ isActive }) => 
+              `${linkBaseStyle} ${isActive ? activeLinkStyle : inactiveLinkStyle}`
+            }
+          >
+            {link.icon}
+            <span>{link.label}</span>
+          </NavLink>
+        ))}
+      </div>
+    </nav>
   );
 }
-
-export default Navbar;

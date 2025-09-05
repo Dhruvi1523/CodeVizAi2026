@@ -38,7 +38,7 @@ const features = [
 
 
   return (
-    <div className="bg-[#0f172a] text-white py-20 px-6 font-sans">
+    <div className="h-screen bg-[#192437] text-white py-20  font-sans">
       {/* Section Title */}
       <div className="text-center max-w-2xl mx-auto">
         <h2 className="text-3xl md:text-4xl font-extrabold">

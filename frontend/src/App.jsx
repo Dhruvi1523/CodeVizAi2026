@@ -66,7 +66,7 @@ function App() {
         />
         <Route path="/dsa-visualizer" element={<DSAVisualizerPage />} />
         <Route
-          path="/flowchart-generator"
+          path="/flowchart"
           element={<FlowchartGeneratorPage />}
         />
 

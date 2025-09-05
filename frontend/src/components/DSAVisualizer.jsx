@@ -1,15 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 
-/*
-  DSAVisualizer.jsx
 
-  - Visualizes Stack (LIFO) and Queue (FIFO)
-  - Push/Pop for Stack, Enqueue/Dequeue for Queue
-  - Speed control, Clear, Load sample
-  - Optimistic animations + backend sync via POST to `apiBase`
-  - Tailwind CSS used for quick styling
-  - Usage: <DSAVisualizer apiBase="/api/dsa" />
-*/
 
 export default function DSAVisualizer({ apiBase = "/api/dsa" }) {
   const [mode, setMode] = useState("stack"); // 'stack' or 'queue'

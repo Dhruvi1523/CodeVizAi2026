@@ -6,12 +6,21 @@ const renderRectSvgNode = ({ nodeDatum, toggleNode }, activeNodeId) => {
     <g>
       <circle
         r={15}
-        fill={nodeDatum.children ? "#3b82f6" : "#22c55e"}
-        stroke={isActive ? "#facc15" : "#ffffff"}
+        // Internal nodes use the primary color, leaf nodes use the accent color
+        fill={nodeDatum.children ? "#6366f1" : "#14b8a6"}
+        // Active node has a warning color stroke, default is the foreground color
+        stroke={isActive ? "#f59e0b" : "#f1f5f9"}
         strokeWidth={isActive ? 4 : 2}
         onClick={toggleNode}
       />
-      <text fill="#ffffff" strokeWidth={0} dy=".31em" x={20} style={{ fontWeight: "bold" }}>
+      <text
+        // Text uses the foreground color
+        fill="#f1f5f9"
+        strokeWidth={0}
+        dy=".31em"
+        x={20}
+        style={{ fontWeight: "bold" }}
+      >
         {nodeDatum.name}
       </text>
     </g>
@@ -19,19 +28,25 @@ const renderRectSvgNode = ({ nodeDatum, toggleNode }, activeNodeId) => {
 };
 
 export default function RecursionTree({ data, activeNodeId }) {
-  if (!data || data.length === 0) {
-    return <p className="text-gray-400">No recursion tree data.</p>;
+  if (!data || !data.length || data[0] === null) {
+    // Placeholder text uses the muted foreground color
+    return <p className="text-[#94a3b8]">No recursion tree data.</p>;
   }
 
   return (
-    <div style={{ width: "100%", height: "500px" }} className="bg-gray-900 rounded-lg p-2">
+    // Container uses the main background color
+    <div style={{ width: "100%", height: "500px" }} className="bg-[#0f172a] rounded-lg p-2">
       <Tree
         data={data}
         translate={{ x: 400, y: 50 }}
         orientation="vertical"
-        separation={{ siblings: 1.5, nonSiblings: 2 }}
+        separation={{ siblings: 2.5,nonSiblings: 2 }}
         collapsible={true}
         renderCustomNodeElement={(rd3tProps) => renderRectSvgNode(rd3tProps, activeNodeId)}
+        pathProps={{
+            stroke: '#334155', // Corresponds to --border color
+            strokeWidth: 2,
+        }}
       />
     </div>
   );

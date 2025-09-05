@@ -1,46 +1,39 @@
 import React from 'react';
-
-// --- Correction 1: Added imports for icons ---
-// Assuming icons are from the 'lucide-react' library, just like the previous file.
-import { Github, FileText, Mail } from 'lucide-react';
-
-// --- Correction 2: Removed unused imports ---
-// Imports for 'Link', 'SignedIn', 'SignedOut', and 'UserButton' were removed
-// as they were not being used in the component.
+import { Github, FileText, Mail ,Code } from 'lucide-react';
 
 export default function Footer() {
   return (
-    // Added font-sans for consistency
-    <footer className="bg-[#0f172a] text-white border-t border-gray-800 px-6 py-8 font-sans">
+    // Use theme hex codes for background, text, and border
+    <footer className="bg-[#0f172a] text-[#f1f5f9] border-t border-[#334155] px-6 py-8 font-sans">
       <div className="container mx-auto flex flex-col md:flex-row items-center justify-between">
         {/* Logo */}
         <div className="flex items-center space-x-3 mb-6 md:mb-0">
-          <span className="text-3xl" role="img" aria-label="laptop emoji">💻</span>
-          <span className="text-xl font-bold text-gray-100">CodeVizAI</span>
+          <div className="w-8 h-8 bg-[#6366f1] rounded-full flex items-center justify-center">
+            <Code size={18} className="text-[#f1f5f9]" />
+          </div>
+          {/* Use main foreground color for brand name */}
+          <span className="text-xl font-bold text-[#f1f5f9]">CodeVizAI</span>
         </div>
 
         {/* Footer Links */}
         <div className="flex space-x-6">
-          <a href="#github" className="flex items-center text-gray-400 hover:text-indigo-400 transition">
+          {/* Use muted foreground for default link color and primary for hover */}
+          <a href="#github" className="flex items-center text-[#94a3b8] hover:text-[#6366f1] transition-colors">
             <Github className="w-4 h-4 mr-2" /> GitHub
           </a>
-          <a href="#docs" className="flex items-center text-gray-400 hover:text-indigo-400 transition">
+          <a href="#docs" className="flex items-center text-[#94a3b8] hover:text-[#6366f1] transition-colors">
             <FileText className="w-4 h-4 mr-2" /> Docs
           </a>
-          <a href="#contact" className="flex items-center text-gray-400 hover:text-indigo-400 transition">
+          <a href="#contact" className="flex items-center text-[#94a3b8] hover:text-[#6366f1] transition-colors">
             <Mail className="w-4 h-4 mr-2" /> Contact
           </a>
         </div>
       </div>
 
       {/* Copyright */}
-      <div className="text-center text-sm text-gray-500 mt-8 pt-6 border-t border-gray-800">
-        {/* --- Correction 3: Made the year dynamic --- */}
-        {/* This will automatically update the year. */}
+      <div className="text-center text-sm text-[#64748b] mt-8 pt-6 border-t border-[#334155]">
         © {new Date().getFullYear()} CodVizAI. Built with modern web technologies.
       </div>
     </footer>
   );
 }
-
-
