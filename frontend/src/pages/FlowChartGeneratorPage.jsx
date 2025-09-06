@@ -12,6 +12,7 @@ import "reactflow/dist/style.css";
 import dagre from "dagre";
 import Navbar from "../components/Navbar";
 import Editor from "@monaco-editor/react";
+import { defineCodVizTheme } from "../utils/monacoTheme";
 
 // --- Dagre Layout Function ---
 const getLayoutedElements = (nodes, edges, direction = 'TB') => {
@@ -160,9 +161,10 @@ function FlowchartGenerator() {
           <div className="w-full border rounded-md bg-[#0f172a] border-[#334155] flex-grow overflow-hidden">
             <Editor
               height="100%"
-              theme="vs-dark"
+              theme="CodVizDark" // Apply the theme by name
               defaultLanguage="python"
               value={input}
+              beforeMount={defineCodVizTheme} // Define the theme before the editor mounts
               onChange={(value) => setInput(value || "")}
               options={{
                 minimap: { enabled: false },

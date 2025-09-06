@@ -16,3 +16,33 @@ body {
   margin-left: 3px !important;
 }
 
+:root{
+ 
+
+@layer base {
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #334155 #1e293b; /* thumb-color track-color */
+  }
+
+  /* For Webkit browsers (Chrome, Safari, Edge, etc.) */
+  *::-webkit-scrollbar {
+    width: 12px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: #0f172a; /* --background */
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background-color: #334155; /* --secondary */
+    border-radius: 20px;
+    border: 3px solid #0f172a; /* Creates padding around the thumb */
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: #475569; /* A slightly lighter secondary color */
+  }
+}
+}
