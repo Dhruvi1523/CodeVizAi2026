@@ -1,6 +1,6 @@
 import { RedirectToSignIn, SignedIn, SignedOut } from "@clerk/clerk-react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-
+import LandscapeLayout from "./layouts/LandscapeLayout";
 import HomePage from "./pages/HomePage";
 import SignInPage from "./pages/SignInPage";
 import SignUpPage from "./pages/SignUpPage";
@@ -12,6 +12,7 @@ import FlowchartGeneratorPage from "./pages/FlowchartGeneratorPage";
 import StackPage from "./pages/dsa/StackPage.jsx";
 import QueuePage from "./pages/dsa/QueuePage.jsx";
 import LinkedListPage from "./pages/dsa/LinkedListPage.jsx";
+import SortingPage from "./pages/SortingPage.jsx"
 
 // import BstPage from "./pages/dsa/BstPage";
 // import AvlTreePage from "./pages/dsa/AvlTreePage";
@@ -57,18 +58,28 @@ function App() {
           }
         />
 
-        <Route path="/dynamic-programming" element={<DynamicProgramingPage />} />
-        <Route path="/dynamic-programming/:algoId" element={<DpVisualizationPage />} />
-        <Route path="/code" element={<CodePage />} />
+        <Route
+          path="/dynamic-programming"
+          element={<DynamicProgramingPage />}
+        />
+        <Route
+          path="/dynamic-programming/:algoId"
+          element={<DpVisualizationPage />}
+        />
+        <Route
+          path="/code"
+          element={
+            <LandscapeLayout>
+              <CodePage />
+            </LandscapeLayout>
+          }
+        />
         <Route
           path="/complexity-analyzer"
           element={<ComplexityAnalyzerPage />}
         />
         <Route path="/dsa-visualizer" element={<DSAVisualizerPage />} />
-        <Route
-          path="/flowchart"
-          element={<FlowchartGeneratorPage />}
-        />
+        <Route path="/flowchart" element={<FlowchartGeneratorPage />} />
 
         <Route path="/stack" element={<StackPage />} />
         <Route path="/queue" element={<QueuePage />} />
@@ -78,6 +89,7 @@ function App() {
       <Route path="/graph" element={<GraphPage />} />
       <Route path="/heap" element={<HeapPage />} />
       <Route path="/dynamic-programming" element={<DynamicProgrammingPage />} /> */}
+      <Route path="/sorting" element={<SortingPage />} /> 
       </Routes>
     </Router>
   );

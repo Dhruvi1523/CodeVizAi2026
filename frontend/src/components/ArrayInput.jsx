@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { Edit3, Check, X } from 'lucide-react';
 
-function ArrayInput(props) {
+const ArrayInput = ({ currentArray, onArrayChange }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [inputValue, setInputValue] = useState(props.currentArray.join(', '));
+  const [inputValue, setInputValue] = useState(currentArray.join(', '));
   const [error, setError] = useState('');
 
   const handleEdit = () => {
-    setInputValue(props.currentArray.join(', '));
+    setInputValue(currentArray.join(', '));
     setIsEditing(true);
     setError('');
   };
@@ -19,7 +19,7 @@ function ArrayInput(props) {
         .map(val => val.trim())
         .filter(val => val !== '')
         .map(val => {
-          const num = parseInt(val);
+          const num = parseInt(val, 10);
           if (isNaN(num)) throw new Error(`"${val}" is not a valid number`);
           if (num < 1 || num > 999) throw new Error(`Numbers must be between 1 and 999`);
           return num;
@@ -35,7 +35,7 @@ function ArrayInput(props) {
         return;
       }
 
-      props.onArrayChange(values);
+      onArrayChange(values);
       setIsEditing(false);
       setError('');
     } catch (err) {
@@ -44,7 +44,7 @@ function ArrayInput(props) {
   };
 
   const handleCancel = () => {
-    setInputValue(props.currentArray.join(', '));
+    setInputValue(currentArray.join(', '));
     setIsEditing(false);
     setError('');
   };
@@ -110,9 +110,9 @@ function ArrayInput(props) {
         </div>
       ) : (
         <div className="bg-gray-700 rounded-lg p-3">
-          <div className="text-gray-300 text-sm mb-2">Current Array ({props.currentArray.length} elements):</div>
+          <div className="text-gray-300 text-sm mb-2">Current Array ({currentArray.length} elements):</div>
           <div className="flex flex-wrap gap-1">
-            {props.currentArray.map((value, index) => (
+            {currentArray.map((value, index) => (
               <span
                 key={index}
                 className="bg-blue-600 text-white px-2 py-1 rounded text-xs font-medium"

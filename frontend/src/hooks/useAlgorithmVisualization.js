@@ -1,7 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import { executeAlgorithm } from "/src/utils/algorithmExecutor.js";
-import { generateRandomArray } from "/src/utils/arrayGenerator.js";
-
+import { executeAlgorithm } from '../utils/algorithmExecutor';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 export const useAlgorithmVisualization = () => {
   const [state, setState] = useState({
     isPlaying: false,
@@ -9,72 +7,85 @@ export const useAlgorithmVisualization = () => {
     steps: [],
     speed: 500,
     arraySize: 20,
-    selectedAlgorithm: "bubble-sort",
+    selectedAlgorithm: 'bubble-sort',
   });
 
-  const [originalArray, setOriginalArray] = useState(
-    [64, 34, 25, 12, 22, 11, 90, 88, 76, 50, 42, 30, 18, 95, 3]
-  );
+  const [originalArray, setOriginalArray] = useState([64, 34, 25, 12, 22, 11, 90, 88, 76, 50, 42, 30, 18, 95, 3]);
   const [searchTarget, setSearchTarget] = useState(null);
-
   const intervalRef = useRef(null);
 
-  /** ✅ Generate steps whenever algorithm/array changes */
-  const generateSteps = useCallback(
-    (algorithmId, array, target) => {
-      try {
-        const steps = executeAlgorithm(algorithmId, array, target);
-        setState((prev) => ({
-          ...prev,
-          steps,
-          currentStep: 0,
-          isPlaying: false,
-        }));
-      } catch (error) {
-        console.error("Error executing algorithm:", error);
-        setState((prev) => ({
-          ...prev,
-          steps: [{ action: "error", array: [...array] }],
-          currentStep: 0,
-          isPlaying: false,
-        }));
-      }
-    },
-    []
-  );
-
+  // Generate initial array
   useEffect(() => {
-    generateSteps(state.selectedAlgorithm, originalArray, searchTarget);
-  }, [state.selectedAlgorithm, originalArray, searchTarget, generateSteps]);
+    generateSteps(state.selectedAlgorithm, originalArray);
+  }, [state.selectedAlgorithm, originalArray, searchTarget]);
 
-  /** ✅ Controls */
-  const play = useCallback(() => {
-    if (state.currentStep < state.steps.length - 1) {
-      setState((prev) => ({ ...prev, isPlaying: true }));
+  const generateSteps = useCallback((algorithmId, array, target) => {
+    try {
+      const steps = executeAlgorithm(algorithmId, array, target);
+      setState(prev => ({
+        ...prev,
+        steps,
+        currentStep: 0,
+        isPlaying: false
+      }));
+    } catch (error) {
+      console.error('Error executing algorithm:', error);
+      setState(prev => ({
+        ...prev,
+        steps: [{ action: 'error', array: [...array] }],
+        currentStep: 0,
+        isPlaying: false
+      }));
     }
-  }, [state.currentStep, state.steps.length]);
+  }, []);
+
+  const play = useCallback(() => {
+    if (state.currentStep >= state.steps.length - 1) return;
+    
+    setState(prev => ({ ...prev, isPlaying: true }));
+    
+    intervalRef.current = setInterval(() => {
+      setState(prev => {
+        if (prev.currentStep >= prev.steps.length - 1) {
+          if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+          }
+          return { ...prev, isPlaying: false };
+        }
+        return { ...prev, currentStep: prev.currentStep + 1 };
+      });
+    }, state.speed);
+  }, [state.currentStep, state.steps.length, state.speed]);
 
   const pause = useCallback(() => {
-    setState((prev) => ({ ...prev, isPlaying: false }));
+    setState(prev => ({ ...prev, isPlaying: false }));
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
   }, []);
 
   const step = useCallback(() => {
-    setState((prev) => ({
+    setState(prev => ({
       ...prev,
       currentStep: Math.min(prev.currentStep + 1, prev.steps.length - 1),
-      isPlaying: false,
+      isPlaying: false
     }));
   }, []);
 
   const reset = useCallback(() => {
-    setState((prev) => ({ ...prev, currentStep: 0, isPlaying: false }));
+    setState(prev => ({ ...prev, currentStep: 0, isPlaying: false }));
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
   }, []);
 
   const generateNewArray = useCallback(() => {
     const newArray = generateRandomArray(state.arraySize);
     setOriginalArray(newArray);
     setSearchTarget(null);
-  }, [state.arraySize]);
+  }, [state.arraySize, state.selectedAlgorithm, generateSteps]);
 
   const setCustomArray = useCallback((array) => {
     setOriginalArray(array);
@@ -84,42 +95,40 @@ export const useAlgorithmVisualization = () => {
   const setSearchTargetValue = useCallback((target) => {
     setSearchTarget(target);
   }, []);
-
   const changeAlgorithm = useCallback((algorithmId) => {
-    setState((prev) => ({ ...prev, selectedAlgorithm: algorithmId }));
+    setState(prev => ({ ...prev, selectedAlgorithm: algorithmId }));
     setSearchTarget(null);
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
   }, []);
 
   const changeSpeed = useCallback((speed) => {
-    setState((prev) => ({ ...prev, speed }));
+    setState(prev => ({ ...prev, speed }));
   }, []);
 
   const changeArraySize = useCallback((arraySize) => {
-    setState((prev) => ({ ...prev, arraySize }));
+    setState(prev => ({ ...prev, arraySize }));
   }, []);
 
-  /** ✅ Interval effect handles autoplay */
+  // Cleanup interval on unmount
   useEffect(() => {
-    if (!state.isPlaying) {
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, []);
+
+  // Update interval when speed changes during playback
+  useEffect(() => {
+    if (state.isPlaying && intervalRef.current) {
       clearInterval(intervalRef.current);
-      intervalRef.current = null;
-      return;
+      play();
     }
+  }, [state.speed]);
 
-    intervalRef.current = setInterval(() => {
-      setState((prev) => {
-        if (prev.currentStep >= prev.steps.length - 1) {
-          clearInterval(intervalRef.current);
-          return { ...prev, isPlaying: false };
-        }
-        return { ...prev, currentStep: prev.currentStep + 1 };
-      });
-    }, state.speed);
-
-    return () => clearInterval(intervalRef.current);
-  }, [state.isPlaying, state.speed, state.steps.length]);
-
-  /** ✅ Derived values */
   const currentStep = state.steps[state.currentStep] || null;
   const canStep = state.currentStep < state.steps.length - 1;
 

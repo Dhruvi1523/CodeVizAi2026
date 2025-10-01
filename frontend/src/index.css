@@ -1,26 +1,18 @@
 @import "tailwindcss";
 @import "@clerk/themes/shadcn.css";
 
-body {
+
+/* 3. Define global styles and custom properties in @layer base */
+@layer base {
+  body {
     background-color: #0f172a;
     padding: 0px;
     margin: 0px;
-}
-/* For Monaco Editor line highlighting */
-.highlight-line {
-  background-color: #3b82f633; /* A semi-transparent blue */
-  margin-left: 3px !important; /* Ensures the highlight touches the line numbers */
-}
-.highlight-error {
-  background-color: #ef444440; /* A semi-transparent red */
-  margin-left: 3px !important;
-}
+  }
 
-:root{
- 
+  /* --- Custom Scrollbar Styling (Cross-browser) --- */
 
-@layer base {
-
+  /* For Firefox */
   * {
     scrollbar-width: thin;
     scrollbar-color: #334155 #1e293b; /* thumb-color track-color */
@@ -29,20 +21,43 @@ body {
   /* For Webkit browsers (Chrome, Safari, Edge, etc.) */
   *::-webkit-scrollbar {
     width: 12px;
+    height: 12px; /* Added for horizontal scrollbars */
   }
 
   *::-webkit-scrollbar-track {
-    background: #0f172a; /* --background */
+    background: #0f172a;
   }
 
   *::-webkit-scrollbar-thumb {
-    background-color: #334155; /* --secondary */
+    background-color: #334155;
     border-radius: 20px;
     border: 3px solid #0f172a; /* Creates padding around the thumb */
   }
 
   *::-webkit-scrollbar-thumb:hover {
-    background-color: #475569; /* A slightly lighter secondary color */
+    background-color: #475569;
   }
 }
+
+/* 4. Define custom, reusable component-level styles in @layer components */
+@layer components {
+  /* For Monaco Editor line highlighting */
+  .highlight-line {
+    background-color: #3b82f633; /* A semi-transparent blue */
+    margin-left: 3px !important; /* Ensures the highlight touches the line numbers */
+  }
+  .highlight-error {
+    background-color: #ef444440; /* A semi-transparent red */
+    margin-left: 3px !important;
+  }
+  .animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+}
+
+/* 5. Keyframes must be at the top level of the CSS, not nested */
+@keyframes pulse {
+  50% {
+    opacity: .5;
+  }
 }

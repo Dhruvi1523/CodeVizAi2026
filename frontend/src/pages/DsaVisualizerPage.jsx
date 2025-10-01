@@ -53,6 +53,12 @@ const features = [
     icon: BrainCircuit,
     path: "/dynamic-programming",
   },
+  {
+    name: "Sorting Algorithms",
+    description: "Sorting Algorithms",
+    icon: BrainCircuit,
+    path: "/sorting",
+  },
 ];
 
 export default function DataStructures() {

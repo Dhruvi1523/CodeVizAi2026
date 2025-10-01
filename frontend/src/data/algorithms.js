@@ -1,3 +1,6 @@
+
+// import { Algorithm } from '../types';
+
 export const algorithms = [
   {
     id: 'bubble-sort',
@@ -60,6 +63,16 @@ export const algorithms = [
     visualization: 'bars'
   },
   {
+    id: 'counting-sort',
+    name: 'Counting Sort',
+    category: 'sorting',
+    timeComplexity: { best: 'O(n+k)', average: 'O(n+k)', worst: 'O(n+k)' },
+    spaceComplexity: 'O(k)',
+    stable: true,
+    description: 'Counts occurrences of each value, then reconstructs the sorted array.',
+    visualization: 'counting',
+  },
+  {
     id: 'linear-search',
     name: 'Linear Search',
     category: 'searching',
@@ -78,23 +91,13 @@ export const algorithms = [
     stable: true,
     description: 'Searches for an element by repeatedly dividing the search space in half.',
     visualization: 'bars'
-  },
-  {
-    id: 'counting-sort',
-    name: 'Counting Sort',
-    category: 'sorting',
-    timeComplexity: { best: 'O(n + k)', average: 'O(n + k)', worst: 'O(n + k)' },
-    spaceComplexity: 'O(k)',
-    stable: true,
-    description: 'Counts occurrences of each element and calculates their positions to build the sorted array. Works only with integers.',
-    visualization: 'bars'
   }
 ];
 
-export function getAlgorithmById(id) {
+export const getAlgorithmById = (id) => {
   return algorithms.find(algo => algo.id === id);
-}
+};
 
-export function getAlgorithmsByCategory(category) {
+export const getAlgorithmsByCategory = (category) => {
   return algorithms.filter(algo => algo.category === category);
-}
+};

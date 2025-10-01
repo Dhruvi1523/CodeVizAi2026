@@ -1,6 +1,5 @@
-import React, { useState, useRef } from "react";
-import { Link } from "react-router-dom";
-import { ArrowDownCircle, ArrowUpCircle, ChevronLeft } from "lucide-react";
+import React, { useState } from "react";
+import { motion } from "framer-motion";
 
 // --- Visual Node Sub-component (Theme Applied) ---
 // The animation logic remains the same, only colors are updated.
@@ -38,138 +37,129 @@ const VisualNode = ({ node }) => {
 
 // --- Main Visualizer Component ---
 export default function QueueVisualizer() {
-  const [nodes, setNodes] = useState([]);
+  const [queue, setQueue] = useState([]);
   const [value, setValue] = useState("");
-  const [message, setMessage] = useState("");
-  const [isBusy, setIsBusy] = useState(false);
+  const [front, setFront] = useState(0);
+  const [rear, setRear] = useState(-1);
   const [history, setHistory] = useState([]);
-  const nextId = useRef(1);
-  const ANIM_MS = 300;
+  const [code, setCode] = useState("Select Enqueue/Dequeue to see code");
+  const [explanation, setExplanation] = useState("Idle...");
 
-  const front = nodes.length ? nodes[0].value : null;
-  const rear = nodes.length ? nodes[nodes.length - 1].value : null;
-  
-  // --- Core Logic (Unchanged) ---
-  const addHistory = (type, val) => {
-    setHistory((prev) => [{ type, val, id: Date.now() }, ...prev.slice(0, 9)]);
-  };
-  const handleEnqueue = () => {
-    if (!value.trim()) {
-      setMessage("Enter a value to enqueue."); return;
-    }
-    setIsBusy(true); setMessage("");
-    const id = nextId.current++;
-    const node = { id, value: value.trim(), status: "enter" };
-    setNodes((prev) => [...prev, node]); // Add to the end
-    setTimeout(() => {
-      setNodes((prev) => prev.map((n) => (n.id === id ? { ...n, status: "idle" } : n)));
-      setIsBusy(false);
-      addHistory("enqueue", node.value);
-    }, ANIM_MS);
+  // ================= ENQUEUE =================
+  const enqueue = () => {
+    if (value === "") return;
+    const newRear = rear + 1;
+    setQueue([...queue, value]);
+    setRear(newRear);
+    setHistory([...history, `Enqueue ${value}`]);
+
+    setCode(`def enqueue(x):\n    global rear\n    rear += 1\n    queue[rear] = x);
+    setExplanation(Inserted ${value} at rear = ${newRear}`);
     setValue("");
   };
-  const handleDequeue = () => {
-    if (nodes.length === 0) {
-      setMessage("Queue is empty — nothing to dequeue."); return;
+
+  // ================= DEQUEUE =================
+  const dequeue = () => {
+    if (front > rear) {
+      setExplanation("Queue is empty, cannot dequeue");
+      return;
     }
-    setIsBusy(true); setMessage("");
-    const dequeued = nodes[0];
-    setNodes((prev) => prev.map((n, idx) => (idx === 0 ? { ...n, status: "leave" } : n)));
-    setTimeout(() => {
-      setNodes((prev) => prev.slice(1)); // Remove from the front
-      setIsBusy(false);
-      addHistory("dequeue", dequeued.value);
-    }, ANIM_MS);
+    const removed = queue[front];
+    setFront(front + 1);
+    setHistory([...history,` Dequeue ${removed}`]);
+
+    setCode(`def dequeue():\n    global front\n    x = queue[front]\n    front += 1\n    return x);
+    setExplanation(Removed ${removed}, now front = ${front + 1}`);
   };
-  const handlePeek = () => {
-    if (nodes.length === 0) {
-      setMessage("Queue is empty."); return;
+
+  // ================= PEEK =================
+  const peek = () => {
+    if (front > rear) {
+      setExplanation("Queue is empty, nothing to peek");
+      return;
     }
-    setMessage(`Front element is: ${front}`);
+    const peekVal = queue[front];
+    setHistory([...history, `Peek ${peekVal}`]);
+
+    setCode(`def peek():\n    return queue[front]`);
+    setExplanation(`Peeked value = ${peekVal} at front = ${front}`);
   };
-  const handleReset = () => {
-    setIsBusy(true); setMessage(""); setHistory([]);
-    setNodes((prev) => prev.map((n) => ({ ...n, status: "leave" })));
-    setTimeout(() => {
-      setNodes([]);
-      setIsBusy(false);
-    }, ANIM_MS + 100);
+
+  // ================= RESET =================
+  const reset = () => {
+    setQueue([]);
+    setValue("");
+    setFront(0);
+    setRear(-1);
+    setHistory([]);
+    setCode("Select Enqueue/Dequeue to see code");
+    setExplanation("Idle...");
   };
 
   return (
-    <div className="min-h-screen bg-[#0f172a] text-[#f1f5f9] p-4 sm:p-6 lg:p-8 flex flex-col">
-      <div className="bg-[#1e293b] rounded-xl border border-[#334155] flex flex-col flex-grow min-h-0">
-        
-        <div className="flex items-center gap-4 p-4 border-b border-[#334155] flex-shrink-0">
-          <Link to="/dsa-visualizer" className="p-2 text-[#94a3b8] hover:bg-[#334155] hover:text-[#f1f5f9] rounded-full transition-colors" title="Back to Data Structures">
-            <ChevronLeft size={20} />
-          </Link>
-          <div className="w-px h-6 bg-[#334155]"></div>
-          <div>
-            <h1 className="text-2xl font-extrabold text-[#f1f5f9]">Queue</h1>
-            <p className="text-sm text-[#94a3b8]">A First-In-First-Out (FIFO) data structure.</p>
+    <div className="grid grid-cols-2 gap-6 p-6 text-white">
+      {/* LEFT: Queue Visualization */}
+      <div>
+        <h2 className="text-xl font-bold mb-4">Queue Visualizer (with front & rear)</h2>
+
+        {/* Queue Box */}
+        <div className="flex border-2 border-gray-500 rounded-lg w-full h-40 items-end justify-center space-x-2 p-2">
+          {queue.slice(front, rear + 1).map((item, i) => (
+            <motion.div
+              key={i}
+              className="w-12 h-12 flex items-center justify-center border rounded-lg bg-blue-600 text-white"
+              initial={{ y: -20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+            >
+              {item}
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Front & Rear pointers */}
+        <div className="flex justify-between px-4 mt-2">
+          <p>Front = {front}</p>
+          <p>Rear = {rear}</p>
+        </div>
+
+        {/* Input + Buttons */}
+        <div className="mt-4">
+          <input
+            type="text"
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            placeholder="Enter value"
+            className="p-2 rounded text-black w-full"
+          />
+          <div className="flex space-x-2 mt-2">
+            <button onClick={enqueue} className="flex-1 px-4 py-2 bg-blue-500 rounded">Enqueue</button>
+            <button onClick={dequeue} className="flex-1 px-4 py-2 bg-green-500 rounded">Dequeue</button>
+            <button onClick={peek} className="flex-1 px-4 py-2 bg-purple-500 rounded">Peek</button>
+            <button onClick={reset} className="flex-1 px-4 py-2 bg-red-500 rounded">Reset</button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6 flex-grow min-h-0">
-          
-          <main className="lg:col-span-2 bg-[#0f172a] rounded-lg p-4 flex flex-col items-center justify-center relative">
-            
-              <div className="w-full h-32 bg-[#0f172a] border-2 border-[#334155] rounded-lg flex items-center p-4 overflow-x-auto">
-                <span className="font-bold text-[#94a3b8] mr-4">Front</span>
-                <div className="flex-grow flex items-center">
-                    {nodes.length === 0 && <p className="w-full text-center text-[#94a3b8]">Queue is empty</p>}
-                    {nodes.map((node) => ( <VisualNode key={node.id} node={node} /> ))}
-                </div>
-                <span className="font-bold text-[#94a3b8] ml-4">Rear</span>
-              </div>
-          </main>
-
-          <aside className="h-full overflow-y-auto pr-2">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="font-semibold text-[#94a3b8]">Front Element:</span>
-                <code className="bg-[#0f172a] px-3 py-1 rounded-md text-lg font-bold text-[#f1f5f9]">{front ?? "–"}</code>
-              </div>
-               <div className="flex items-center justify-between">
-                <span className="font-semibold text-[#94a3b8]">Rear Element:</span>
-                <code className="bg-[#0f172a] px-3 py-1 rounded-md text-lg font-bold text-[#f1f5f9]">{rear ?? "–"}</code>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="font-semibold text-[#94a3b8]">Queue Size:</span>
-                <code className="bg-[#0f172a] px-3 py-1 rounded-md text-lg font-bold text-[#f1f5f9]">{nodes.length}</code>
-              </div>
-            </div>
-
-            <hr className="my-6 border-[#334155]" />
-            
-            <div>
-              <label className="block text-sm font-medium text-[#94a3b8]">Value</label>
-              <input value={value} onChange={(e) => setValue(e.target.value)} placeholder="Enter a value" className="mt-1 w-full px-3 py-2 rounded-md border border-[#334155] bg-[#0f172a] text-[#f1f5f9] focus:outline-none focus:ring-2 focus:ring-[#6366f1]" disabled={isBusy} />
-              <div className="grid grid-cols-2 gap-3 mt-4">
-                <button onClick={handleEnqueue} disabled={isBusy} className="bg-[#6366f1] hover:opacity-90 text-[#f1f5f9] px-3 py-2 rounded-md font-semibold disabled:opacity-50">Enqueue</button>
-                <button onClick={handleDequeue} disabled={isBusy} className="bg-[#334155] hover:bg-opacity-80 text-[#f1f5f9] px-3 py-2 rounded-md font-semibold disabled:opacity-50">Dequeue</button>
-                <button onClick={handlePeek} disabled={isBusy} className="bg-[#8b5cf6] hover:opacity-90 text-[#f1f5f9] px-3 py-2 rounded-md font-semibold disabled:opacity-50">Peek</button>
-                <button onClick={handleReset} disabled={isBusy} className="bg-[#ef4444] hover:opacity-90 text-[#f1f5f9] px-3 py-2 rounded-md font-semibold disabled:opacity-50">Reset</button>
-              </div>
-            </div>
-            
-            {message && <p className="mt-4 text-sm text-[#f59e0b] text-center">{message}</p>}
-            <hr className="my-6 border-[#334155]" />
-            
-            <div>
-              <h4 className="text-md font-semibold mb-3">Operation History</h4>
-              <ul className="space-y-2 text-sm text-[#94a3b8] h-32 overflow-y-auto">
-                {history.length > 0 ? history.map((h) => (
-                  <li key={h.id} className="flex items-center gap-2">
-                    {h.type === "enqueue" ? <ArrowDownCircle className="text-[#14b8a6] w-4 h-4 flex-shrink-0" /> : <ArrowUpCircle className="text-[#ef4444] w-4 h-4 flex-shrink-0" />}
-                    <span>{h.type.charAt(0).toUpperCase() + h.type.slice(1)}: <strong>{h.val}</strong></span>
-                  </li>
-                )) : <li>No operations yet.</li>}
-              </ul>
-            </div>
-          </aside>
+        {/* History */}
+        <div className="mt-4 bg-gray-800 p-2 rounded-lg">
+          <h3 className="font-bold">History</h3>
+          {history.length === 0 ? (
+            <p>No operations yet.</p>
+          ) : (
+            <ul className="list-disc list-inside">
+              {history.map((h, i) => (
+                <li key={i}>{h}</li>
+              ))}
+            </ul>
+          )}
         </div>
+      </div>
+
+      {/* RIGHT: Python Code + Explanation */}
+      <div className="bg-gray-900 p-4 rounded-lg">
+        <h3 className="font-bold mb-2">Queue Code</h3>
+        <pre className="bg-black p-2 rounded text-green-400">{code}</pre>
+        <h3 className="font-bold mt-4">Line explanation</h3>
+        <p>{explanation}</p>
       </div>
     </div>
   );

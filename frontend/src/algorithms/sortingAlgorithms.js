@@ -1,268 +1,409 @@
-// ---------------- BUBBLE SORT ----------------
-export function* bubbleSort(arr) {
+// Counting Sort generator for visualization
+export function* countingSort(arr) {
   const array = [...arr];
+  if (array.length === 0) return;
+  const max = Math.max(...array);
+  const min = Math.min(...array);
+  const range = max - min + 1;
+  const count = Array(range).fill(0);
+  const output = Array(array.length).fill(0);
+
+  // Step 1: Count occurrences
+  for (let i = 0; i < array.length; i++) {
+    count[array[i] - min]++;
+    yield {
+      action: 'count',
+      array: [...array],
+      count: [...count],
+      output: [...output],
+      currentIndex: i,
+      currentValue: array[i],
+      countIndex: array[i] - min,
+      phase: 'counting',
+    };
+  }
+
+  // Step 2: Cumulative count
+  for (let i = 1; i < count.length; i++) {
+    count[i] += count[i - 1];
+    yield {
+      action: 'cumulative',
+      array: [...array],
+      count: [...count],
+      output: [...output],
+      countIndex: i,
+      phase: 'cumulative',
+    };
+  }
+
+  // Step 3: Build output array
+  for (let i = array.length - 1; i >= 0; i--) {
+    const val = array[i];
+    const idx = count[val - min] - 1;
+    output[idx] = val;
+    count[val - min]--;
+    yield {
+      action: 'output',
+      array: [...array],
+      count: [...count],
+      output: [...output],
+      currentIndex: i,
+      currentValue: val,
+      outputIndex: idx,
+      countIndex: val - min,
+      phase: 'output',
+    };
+  }
+
+  yield {
+    action: 'done',
+    array: [...output], // Show the sorted array as the main array
+    count: [...count],
+    output: [...output],
+    phase: 'done',
+    sorted: Array.from({ length: output.length }, (_, i) => i)
+  };
+}
+
+// sortingAlgorithms.js
+export function* bubbleSort(arr) {
+  const deep = (a) => JSON.parse(JSON.stringify(a));
+  const getVal = (v) => (v !== null && typeof v === 'object' && 'value' in v ? v.value : v);
+
+  const array = deep(arr);
   const n = array.length;
 
   for (let i = 0; i < n; i++) {
     let swapped = false;
     for (let j = 0; j < n - i - 1; j++) {
+      const left = getVal(array[j]);
+      const right = getVal(array[j + 1]);
+      const compResult = left > right;
+
       yield {
         action: 'compare',
-        array: [...array],
+        array: deep(array),
         comparing: [j, j + 1],
-        sorted: Array.from({ length: i }, (_, k) => n - 1 - k)
+        comparison: { left, right, operator: '>', result: compResult },
+        explanation: `Compare ${left} and ${right}: ${compResult ? 'true → they will be swapped' : 'false → no swap'}`,
+        sorted: Array.from({ length: i }, (_, k) => n - 1 - k),
       };
 
-      if (array[j] > array[j + 1]) {
+      if (compResult) {
+        // perform swap
         [array[j], array[j + 1]] = [array[j + 1], array[j]];
         swapped = true;
+
         yield {
           action: 'swap',
-          array: [...array],
+          array: deep(array),
           swapped: [j, j + 1],
-          sorted: Array.from({ length: i }, (_, k) => n - 1 - k)
+          explanation: `Swapped ${left} and ${right}`,
+          sorted: Array.from({ length: i }, (_, k) => n - 1 - k),
         };
       }
     }
+
     if (!swapped) break;
   }
 
   yield {
     action: 'done',
-    array: [...array],
-    sorted: Array.from({ length: n }, (_, i) => i)
+    array: deep(array),
+    explanation: 'Array sorted.',
+    sorted: Array.from({ length: n }, (_, i) => i),
   };
 }
 
-
-// ---------------- SELECTION SORT ----------------
 export function* selectionSort(arr) {
-  const array = [...arr];
+  const deep = (a) => JSON.parse(JSON.stringify(a));
+  const getVal = (v) => (v !== null && typeof v === 'object' && 'value' in v ? v.value : v);
+
+  const array = deep(arr);
   const n = array.length;
 
   for (let i = 0; i < n - 1; i++) {
     let minIdx = i;
 
     for (let j = i + 1; j < n; j++) {
+      const candidate = getVal(array[j]);
+      const currentMin = getVal(array[minIdx]);
+      const compResult = candidate < currentMin;
+
       yield {
         action: 'compare',
-        array: [...array],
+        array: deep(array),
         comparing: [minIdx, j],
-        sorted: Array.from({ length: i }, (_, k) => k)
+        comparison: { left: currentMin, right: candidate, operator: '<', result: compResult },
+        explanation: `Is candidate ${candidate} < current min ${currentMin}? ${compResult ? 'yes → update min' : 'no'}`,
+        sorted: Array.from({ length: i }, (_, k) => k),
       };
 
-      if (array[j] < array[minIdx]) {
+      if (compResult) {
         minIdx = j;
+        yield {
+          action: 'minUpdate',
+          array: deep(array),
+          minIndex: minIdx,
+          explanation: `New minimum found at index ${minIdx} (${candidate})`,
+          sorted: Array.from({ length: i }, (_, k) => k),
+        };
       }
     }
 
     if (minIdx !== i) {
+      const a = getVal(array[i]);
+      const b = getVal(array[minIdx]);
       [array[i], array[minIdx]] = [array[minIdx], array[i]];
       yield {
         action: 'swap',
-        array: [...array],
+        array: deep(array),
         swapped: [i, minIdx],
-        sorted: Array.from({ length: i + 1 }, (_, k) => k)
+        explanation: `Swap ${b} (new min) with ${a} at index ${i}`,
+        sorted: Array.from({ length: i + 1 }, (_, k) => k),
+      };
+    } else {
+      // no swap, but we can still mark that i is finalized
+      yield {
+        action: 'noSwap',
+        array: deep(array),
+        explanation: `Position ${i} already has the minimum (${getVal(array[i])}).`,
+        sorted: Array.from({ length: i + 1 }, (_, k) => k),
       };
     }
   }
 
   yield {
     action: 'done',
-    array: [...array],
-    sorted: Array.from({ length: n }, (_, i) => i)
+    array: deep(array),
+    explanation: 'Array sorted.',
+    sorted: Array.from({ length: n }, (_, i) => i),
   };
 }
 
-
-// ---------------- INSERTION SORT ----------------
 export function* insertionSort(arr) {
-  const array = [...arr];
+  const deep = (a) => JSON.parse(JSON.stringify(a));
+  const getVal = (v) => (v !== null && typeof v === 'object' && 'value' in v ? v.value : v);
 
-  for (let i = 1; i < array.length; i++) {
-    const key = array[i];
-    let j = i - 1;
-
-    yield {
-      action: 'select',
-      array: [...array],
-      comparing: [i],
-      sorted: Array.from({ length: i }, (_, k) => k)
-    };
-
-    while (j >= 0 && array[j] > key) {
-      yield {
-        action: 'compare',
-        array: [...array],
-        comparing: [j, j + 1]
-      };
-
-      array[j + 1] = array[j];
-      j--;
-
-      yield {
-        action: 'shift',
-        array: [...array],
-        comparing: [j + 2]
-      };
-    }
-
-    array[j + 1] = key;
-    yield {
-      action: 'insert',
-      array: [...array],
-      sorted: Array.from({ length: i + 1 }, (_, k) => k)
-    };
-  }
-
-  yield {
-    action: 'done',
-    array: [...array],
-    sorted: Array.from({ length: array.length }, (_, i) => i)
-  };
-}
-
-
-// ---------------- QUICK SORT ----------------
-export function* quickSort(arr) {
-  const array = [...arr];
-
-  function* quickSortHelper(low, high) {
-    if (low < high) {
-      const pivotIndex = yield* partition(array, low, high);
-      yield* quickSortHelper(low, pivotIndex - 1);
-      yield* quickSortHelper(pivotIndex + 1, high);
-    }
-  }
-
-  yield* quickSortHelper(0, array.length - 1);
-
-  yield {
-    action: 'done',
-    array: [...array],
-    sorted: Array.from({ length: array.length }, (_, i) => i)
-  };
-}
-
-function* partition(array, low, high) {
-  const pivot = array[high];
-  let i = low - 1;
-
-  yield {
-    action: 'select-pivot',
-    array: [...array],
-    pivot: high
-  };
-
-  for (let j = low; j < high; j++) {
-    yield {
-      action: 'compare',
-      array: [...array],
-      comparing: [j, high],
-      pivot: high
-    };
-
-    if (array[j] <= pivot) {
-      i++;
-      if (i !== j) {
-        [array[i], array[j]] = [array[j], array[i]];
-        yield {
-          action: 'swap',
-          array: [...array],
-          swapped: [i, j],
-          pivot: high
-        };
-      }
-    }
-  }
-
-  [array[i + 1], array[high]] = [array[high], array[i + 1]];
-  yield {
-    action: 'place-pivot',
-    array: [...array],
-    swapped: [i + 1, high],
-    partitionIndex: i + 1
-  };
-
-  return i + 1;
-}
-
-
-// ---------------- MERGE SORT ----------------
-export function* mergeSort(arr) {
-  const array = [...arr];
+  const array = deep(arr);
   const n = array.length;
 
-  function* mergeSortHelper(start, end) {
-    if (end - start <= 1) return;
+  // initial state
+  yield { action: 'start', array: deep(array), explanation: 'Start insertion sort', sorted: [] };
 
-    const mid = Math.floor((start + end) / 2);
-    yield* mergeSortHelper(start, mid);
-    yield* mergeSortHelper(mid, end);
+  for (let i = 1; i < n; i++) {
+    const keyItem = array[i];
+    const keyVal = getVal(keyItem);
+    let j = i - 1;
 
-    let i = start, j = mid, k = start;
-    const temp = [];
+    // pick up key -> create a hole
+    array[i] = null;
+    yield {
+      action: 'pickup',
+      array: deep(array),
+      keyInHand: { value: keyVal, originalIndex: i },
+      explanation: `Picked key ${keyVal} from index ${i}. Create a hole at index ${i}.`,
+      sorted: Array.from({ length: i }, (_, k) => k),
+    };
 
-    while (i < mid && j < end) {
+    // shift items right while they are greater than key
+    while (j >= 0 && array[j] !== null && getVal(array[j]) > keyVal) {
+      const leftVal = getVal(array[j]);
+      const compResult = leftVal > keyVal;
+
+      // comparison (single index — compare array[j] with key)
       yield {
         action: 'compare',
-        array: [...array],
-        comparing: [i, j]
+        array: deep(array),
+        comparing: [j],
+        comparison: { left: leftVal, right: keyVal, operator: '>', result: compResult },
+        explanation: `Compare ${leftVal} (index ${j}) > ${keyVal} (key)? ${compResult ? 'yes → shift right' : 'no → stop'}`,
+        sorted: Array.from({ length: i }, (_, k) => k),
       };
 
-      if (array[i] <= array[j]) {
-        temp.push(array[i++]);
-      } else {
-        temp.push(array[j++]);
-      }
-
+      // perform shift
+      array[j + 1] = array[j];
+      array[j] = null;
       yield {
-        action: 'merge-step',
-        array: [...array],
-        merged: [...temp],
-        swapped: [k]
+        action: 'shift',
+        array: deep(array),
+        shifted: { from: j, to: j + 1, value: leftVal, reason: `${leftVal} > ${keyVal}` },
+        keyInHand: { value: keyVal, originalIndex: i },
+        explanation: `Shifted ${leftVal} from ${j} to ${j + 1} because ${leftVal} > ${keyVal}.`,
+        sorted: Array.from({ length: i }, (_, k) => k),
       };
-      k++;
+
+      j--;
     }
 
-    while (i < mid) {
-      temp.push(array[i++]);
-      yield {
-        action: 'merge-step',
-        array: [...array],
-        merged: [...temp],
-        swapped: [k]
-      };
-      k++;
-    }
-
-    while (j < end) {
-      temp.push(array[j++]);
-      yield {
-        action: 'merge-step',
-        array: [...array],
-        merged: [...temp],
-        swapped: [k]
-      };
-      k++;
-    }
-
-    for (let p = 0; p < temp.length; p++) {
-      array[start + p] = temp[p];
-    }
+    // place the key into final position j+1
+    array[j + 1] = keyItem;
+    yield {
+      action: 'place',
+      array: deep(array),
+      placed: { index: j + 1, value: keyItem },
+      explanation: `Placed key ${keyVal} at index ${j + 1}.`,
+      sorted: Array.from({ length: i + 1 }, (_, k) => k),
+    };
   }
-
-  yield* mergeSortHelper(0, n);
 
   yield {
     action: 'done',
-    array: [...array],
-    sorted: Array.from({ length: n }, (_, i) => i)
+    array: deep(array),
+    explanation: 'Array sorted.',
+    sorted: Array.from({ length: n }, (_, i) => i),
   };
 }
 
 
-// ---------------- HEAP SORT ----------------
+
+
+
+
+export function* quickSort(arr, low = 0, high = arr.length - 1) {
+  const array = [...arr];
+
+  function* partition(low, high) {
+    const pivot = array[high];
+    let i = low - 1;
+
+    yield { action: 'select-pivot', array: [...array], pivotIndex: high, low, high };
+
+    for (let j = low; j < high; j++) {
+      yield { action: 'compare', array: [...array], comparing: [j, high], pivotIndex: high };
+      if (array[j] <= pivot) {
+        i++;
+        if (i !== j) {
+          [array[i], array[j]] = [array[j], array[i]];
+          yield { action: 'swap', array: [...array], swapped: [i, j], pivotIndex: high };
+        }
+      }
+    }
+
+    [array[i + 1], array[high]] = [array[high], array[i + 1]];
+    yield { action: 'place-pivot', array: [...array], pivotIndex: i + 1 };
+    return i + 1;
+  }
+
+  if (low < high) {
+    const pi = yield* partition(low, high);
+    yield* quickSort(array, low, pi - 1);
+    yield* quickSort(array, pi + 1, high);
+  }
+
+  if (low === 0 && high === arr.length - 1) {
+    yield { action: 'done', array: [...array] };
+  }
+}
+
+
+// The startIndex parameter is added to track the position in the original array
+// Merge Sort Generator with step-by-step merge animation
+export function* mergeSort(arr, depth = 0, startIndex = 0) {
+  if (arr.length <= 1) {
+    yield {
+      action: "base",
+      array: [...arr],
+      range: [startIndex, startIndex + arr.length - 1],
+      depth,
+    };
+    return arr;
+  }
+
+  const mid = Math.floor(arr.length / 2);
+  const left = arr.slice(0, mid);
+  const right = arr.slice(mid);
+
+  // Split step
+  yield {
+    action: "split",
+    array: [...arr],
+    left,
+    right,
+    range: [startIndex, startIndex + arr.length - 1],
+    depth,
+  };
+
+  const sortedLeft = yield* mergeSort(left, depth + 1, startIndex);
+  const sortedRight = yield* mergeSort(right, depth + 1, startIndex + mid);
+
+  // Merge phase
+  const merged = [];
+  let li = 0,
+    ri = 0;
+
+  while (li < sortedLeft.length && ri < sortedRight.length) {
+    // highlight compare
+    yield {
+      action: "compare",
+      left: { array: sortedLeft, index: li },
+      right: { array: sortedRight, index: ri },
+      merged: [...merged],
+      range: [startIndex, startIndex + arr.length - 1],
+      depth,
+    };
+
+    if (sortedLeft[li] <= sortedRight[ri]) {
+      merged.push(sortedLeft[li++]);
+    } else {
+      merged.push(sortedRight[ri++]);
+    }
+
+    // after placing element
+    yield {
+      action: "merge-step",
+      left: { array: sortedLeft, index: li },
+      right: { array: sortedRight, index: ri },
+      merged: [...merged],
+      range: [startIndex, startIndex + arr.length - 1],
+      depth,
+    };
+  }
+
+  // leftover left elements
+  while (li < sortedLeft.length) {
+    merged.push(sortedLeft[li++]);
+    yield {
+      action: "merge-step",
+      left: { array: sortedLeft, index: li },
+      right: { array: sortedRight, index: ri },
+      merged: [...merged],
+      range: [startIndex, startIndex + arr.length - 1],
+      depth,
+    };
+  }
+
+  // leftover right elements
+  while (ri < sortedRight.length) {
+    merged.push(sortedRight[ri++]);
+    yield {
+      action: "merge-step",
+      left: { array: sortedLeft, index: li },
+      right: { array: sortedRight, index: ri },
+      merged: [...merged],
+      range: [startIndex, startIndex + arr.length - 1],
+      depth,
+    };
+  }
+
+  // final merged array at this depth
+  yield {
+    action: "merge-complete",
+    array: [...merged],
+    range: [startIndex, startIndex + arr.length - 1],
+    depth,
+  };
+
+  return merged;
+}
+
+
+
+
+
+
+
+
 export function* heapSort(arr) {
   const array = [...arr];
   const n = array.length;
@@ -272,22 +413,22 @@ export function* heapSort(arr) {
     yield* heapify(array, n, i);
   }
 
-  // Extract elements
+  // Extract elements one by one
   for (let i = n - 1; i > 0; i--) {
     [array[0], array[i]] = [array[i], array[0]];
-    yield {
-      action: 'extract-max',
-      array: [...array],
+    yield { 
+      action: 'extract-max', 
+      array: [...array], 
       swapped: [0, i],
       sorted: Array.from({ length: n - i }, (_, k) => n - 1 - k)
     };
-
+    
     yield* heapify(array, i, 0);
   }
 
-  yield {
-    action: 'done',
-    array: [...array],
+  yield { 
+    action: 'done', 
+    array: [...array], 
     sorted: Array.from({ length: n }, (_, i) => i)
   };
 }
@@ -298,10 +439,10 @@ function* heapify(array, n, i) {
   const right = 2 * i + 2;
 
   if (left < n) {
-    yield {
-      action: 'compare',
-      array: [...array],
-      comparing: [largest, left]
+    yield { 
+      action: 'compare', 
+      array: [...array], 
+      comparing: [largest, left] 
     };
     if (array[left] > array[largest]) {
       largest = left;
@@ -309,10 +450,10 @@ function* heapify(array, n, i) {
   }
 
   if (right < n) {
-    yield {
-      action: 'compare',
-      array: [...array],
-      comparing: [largest, right]
+    yield { 
+      action: 'compare', 
+      array: [...array], 
+      comparing: [largest, right] 
     };
     if (array[right] > array[largest]) {
       largest = right;
@@ -321,13 +462,11 @@ function* heapify(array, n, i) {
 
   if (largest !== i) {
     [array[i], array[largest]] = [array[largest], array[i]];
-    yield {
-      action: 'swap',
-      array: [...array],
-      swapped: [i, largest]
+    yield { 
+      action: 'swap', 
+      array: [...array], 
+      swapped: [i, largest] 
     };
     yield* heapify(array, n, largest);
-  } else {
-    yield { action: 'heapify-done', array: [...array], index: i };
   }
 }

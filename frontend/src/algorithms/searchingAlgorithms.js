@@ -1,36 +1,86 @@
+// import { AlgorithmStep } from '../types';
 
-/** ✅ Linear Search */
-export function* linearSearch(array, target) {
+export function* linearSearch(arr, target) {
+  const array = [...arr];
+  
   for (let i = 0; i < array.length; i++) {
-    yield { action: "compare", array: [...array], comparing: [i], target };
+    yield { 
+      action: 'compare', 
+      array: [...array], 
+      comparing: [i],
+      current: i
+    };
+    
     if (array[i] === target) {
-      yield { action: "found", array: [...array], index: i };
-      return i;
+      yield { 
+        action: 'found', 
+        array: [...array], 
+        current: i,
+        found: true
+      };
+      return;
     }
   }
-  yield { action: "not-found", array: [...array], target };
-  return -1;
+  
+  yield { 
+    action: 'not-found', 
+    array: [...array], 
+    found: false
+  };
 }
 
-/** ✅ Binary Search */
-export function* binarySearch(array, target) {
-  let low = 0;
-  let high = array.length - 1;
-
-  while (low <= high) {
-    let mid = Math.floor((low + high) / 2);
-    yield { action: "compare", array: [...array], comparing: [mid], target };
-
+export function* binarySearch(arr, target) {
+  // First, we need to sort the array for binary search
+  const array = [...arr].sort((a, b) => a - b);
+  let left = 0;
+  let right = array.length - 1;
+  
+  yield { 
+    action: 'init', 
+    array: [...array], 
+    comparing: [left, right]
+  };
+  
+  while (left <= right) {
+    const mid = Math.floor((left + right) / 2);
+    
+    yield { 
+      action: 'select-mid', 
+      array: [...array], 
+      comparing: [left, mid, right],
+      current: mid
+    };
+    
     if (array[mid] === target) {
-      yield { action: "found", array: [...array], index: mid };
-      return mid;
-    } else if (array[mid] < target) {
-      low = mid + 1;
+      yield { 
+        action: 'found', 
+        array: [...array], 
+        current: mid,
+        found: true
+      };
+      return;
+    }
+    
+    if (array[mid] < target) {
+      left = mid + 1;
+      yield { 
+        action: 'search-right', 
+        array: [...array], 
+        comparing: [left, right]
+      };
     } else {
-      high = mid - 1;
+      right = mid - 1;
+      yield { 
+        action: 'search-left', 
+        array: [...array], 
+        comparing: [left, right]
+      };
     }
   }
-
-  yield { action: "not-found", array: [...array], target };
-  return -1;
+  
+  yield { 
+    action: 'not-found', 
+    array: [...array], 
+    found: false
+  };
 }
