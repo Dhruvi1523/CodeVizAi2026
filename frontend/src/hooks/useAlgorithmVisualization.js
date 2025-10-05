@@ -1,13 +1,13 @@
 import { executeAlgorithm } from '../utils/algorithmExecutor';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-export const useAlgorithmVisualization = () => {
+export const useAlgorithmVisualization = (selectedAlgorithmId) => {
   const [state, setState] = useState({
     isPlaying: false,
     currentStep: 0,
     steps: [],
     speed: 500,
     arraySize: 20,
-    selectedAlgorithm: 'bubble-sort',
+    selectedAlgorithm : selectedAlgorithmId
   });
 
   const [originalArray, setOriginalArray] = useState([64, 34, 25, 12, 22, 11, 90, 88, 76, 50, 42, 30, 18, 95, 3]);
@@ -95,14 +95,7 @@ export const useAlgorithmVisualization = () => {
   const setSearchTargetValue = useCallback((target) => {
     setSearchTarget(target);
   }, []);
-  const changeAlgorithm = useCallback((algorithmId) => {
-    setState(prev => ({ ...prev, selectedAlgorithm: algorithmId }));
-    setSearchTarget(null);
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-  }, []);
+ 
 
   const changeSpeed = useCallback((speed) => {
     setState(prev => ({ ...prev, speed }));
@@ -145,7 +138,6 @@ export const useAlgorithmVisualization = () => {
     generateNewArray,
     setCustomArray,
     setSearchTargetValue,
-    changeAlgorithm,
     changeSpeed,
     changeArraySize,
   };

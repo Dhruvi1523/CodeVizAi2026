@@ -1,11 +1,12 @@
 // src/pages/CodePage.jsx
 
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback, act } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import Navbar from "../components/Navbar";
 import TraceLayout from "../components/TraceLayout";
 import EditorPanel from "../components/EditorPanel";
+import ComplexityTab from "../components/ComplexityTab";
 
 const CodePage = () => {
   const [code, setCode] = useState(
@@ -42,7 +43,6 @@ print("Factorial of", num, "is:", factorial(num))
   const mermaidContainerRef = useRef(null);
   const [finalOutputToShow, setFinalOutputToShow] = useState(null);
   const decorationIds = useRef([]);
-
 
   // useEffect(() => {
   //   if (window.mermaid) {
@@ -314,7 +314,6 @@ print("Factorial of", num, "is:", factorial(num))
     }
   }
 
-
   return (
     <div className="flex flex-col h-screen bg-[#0f172a] text-[#f1f5f9] font-sans ">
       <Navbar />
@@ -324,15 +323,15 @@ print("Factorial of", num, "is:", factorial(num))
           <PanelGroup direction="horizontal" className="h-full">
             {/* --- Left Panel: Code Editor --- */}
             <Panel defaultSize={50} minSize={25}>
-               <EditorPanel 
-                        code={code}
-                        setCode={setCode}
-                        onRun={handleRun}
-                        // Pass other handlers like onFlowchart if needed
-                        isLoading={isLoading}
-                        editorRef={editorRef}
-                        monacoRef={monacoRef}
-                    />
+              <EditorPanel
+                code={code}
+                setCode={setCode}
+                onRun={handleRun}
+                // Pass other handlers like onFlowchart if needed
+                isLoading={isLoading}
+                editorRef={editorRef}
+                monacoRef={monacoRef}
+              />
             </Panel>
 
             <PanelResizeHandle className="w-2 bg-[#0f172a] hover:bg-[#6366f1]/50 transition-colors flex items-center justify-center">
@@ -364,6 +363,16 @@ print("Factorial of", num, "is:", factorial(num))
                       }`}
                     >
                       Output
+                    </button>
+                    <button
+                      onClick={() => setActiveTab("complexity")}
+                      className={`px-4 py-2 font-semibold transition-colors ${
+                        activeTab === "output"
+                          ? "border-b-2 border-blue-500 text-white"
+                          : "text-gray-400"
+                      }`}
+                    >
+                      Complexity
                     </button>
                   </div>
                   <div className="flex-grow bg-[#1e293b] rounded-lg border border-[#334155] m-4 min-h-0 ">
@@ -426,6 +435,12 @@ print("Factorial of", num, "is:", factorial(num))
                           <pre className="bg-gray-900 p-4 rounded-lg whitespace-pre-wrap h-full">
                             {output || "No output produced."}
                           </pre>
+                        )}
+                        {activeTab === "complexity" && (
+                          <ComplexityTab
+                            code={code}
+                           
+                          />
                         )}
                       </motion.div>
                     </AnimatePresence>

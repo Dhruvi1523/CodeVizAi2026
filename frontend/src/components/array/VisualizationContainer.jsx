@@ -1,5 +1,5 @@
 import React from 'react';
-import { getAlgorithmById } from '../data/algorithms';
+import { getAlgorithmById } from '../../data/algorithms';
 import BarVisualization from './BarVisualization';
 import MergeVisualization from './MergeVisualization';
 import QuickSortVisualization from './QuickSortVisualization';

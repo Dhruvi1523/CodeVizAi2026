@@ -12,7 +12,8 @@ import FlowchartGeneratorPage from "./pages/FlowchartGeneratorPage";
 import StackPage from "./pages/dsa/StackPage.jsx";
 import QueuePage from "./pages/dsa/QueuePage.jsx";
 import LinkedListPage from "./pages/dsa/LinkedListPage.jsx";
-import SortingPage from "./pages/SortingPage.jsx"
+import SortingPage from "./pages/dsa/SortingPage.jsx"
+
 
 // import BstPage from "./pages/dsa/BstPage";
 // import AvlTreePage from "./pages/dsa/AvlTreePage";
@@ -21,6 +22,7 @@ import SortingPage from "./pages/SortingPage.jsx"
 // import DynamicProgrammingPage from "./pages/dsa/DynamicProgrammingPage";
 import DpVisualizationPage from "./components/dp/DpVisualizationPage.jsx";
 import DynamicProgramingPage from "./pages/dsa/DynamicProgramingPage.jsx";
+import AlgorithmSelector from "./components/Array/AlgorithmSelector.jsx";
 // ProtectedRoute wrapper
 function ProtectedRoute({ children }) {
   return (
@@ -89,7 +91,8 @@ function App() {
       <Route path="/graph" element={<GraphPage />} />
       <Route path="/heap" element={<HeapPage />} />
       <Route path="/dynamic-programming" element={<DynamicProgrammingPage />} /> */}
-      <Route path="/sorting" element={<SortingPage />} /> 
+      <Route path="/array" element={<AlgorithmSelector/>} />
+      <Route path="/sorting/:algoId" element={<SortingPage />} /> 
       </Routes>
     </Router>
   );

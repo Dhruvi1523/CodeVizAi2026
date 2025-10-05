@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Code, Copy, Check } from 'lucide-react';
-import { getAlgorithmCode } from '../data/algorithmCode';
+import { getAlgorithmCode } from '../../data/algorithmCode';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 

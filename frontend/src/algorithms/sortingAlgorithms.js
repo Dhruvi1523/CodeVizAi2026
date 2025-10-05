@@ -256,45 +256,127 @@ export function* insertionSort(arr) {
 }
 
 
+let nodeCounter = 0;
+const newNodeId = () => `node-${++nodeCounter}`;
 
-
-
-
-export function* quickSort(arr, low = 0, high = arr.length - 1) {
+export function* quickSort(arr, low = 0, high = arr.length - 1, depth = 0, parentId = null, finalizedSet = new Set()) {
   const array = [...arr];
+  const nodeId = `node-${Math.random().toString(36).substr(2, 9)}`;
 
-  function* partition(low, high) {
-    const pivot = array[high];
-    let i = low - 1;
+  // Only yield meaningful subarrays
+  if (high <= low) {
+    if (low === high) finalizedSet.add(low); // single element is placed
+    yield {
+      action: "done-node",
+      nodeId,
+      array: [...array],
+      depth,
+      low,
+      high,
+      finalized: Array.from(finalizedSet),
+    };
+    return;
+  }
 
-    yield { action: 'select-pivot', array: [...array], pivotIndex: high, low, high };
+  const pivotIndex = high;
+  const pivotValue = array[pivotIndex];
+  let i = low - 1;
 
-    for (let j = low; j < high; j++) {
-      yield { action: 'compare', array: [...array], comparing: [j, high], pivotIndex: high };
-      if (array[j] <= pivot) {
-        i++;
-        if (i !== j) {
-          [array[i], array[j]] = [array[j], array[i]];
-          yield { action: 'swap', array: [...array], swapped: [i, j], pivotIndex: high };
-        }
+  // Partition visualization
+  yield {
+    action: "partition",
+    nodeId,
+    array: [...array],
+    pivotIndex,
+    low,
+    high,
+    depth,
+    finalized: Array.from(finalizedSet),
+  };
+
+  // Select pivot
+  yield {
+    action: "select-pivot",
+    nodeId,
+    array: [...array],
+    pivotIndex,
+    low,
+    high,
+    depth,
+    finalized: Array.from(finalizedSet),
+  };
+
+  for (let j = low; j < high; j++) {
+    yield {
+      action: "compare",
+      nodeId,
+      array: [...array],
+      comparing: [j, pivotIndex],
+      pivotIndex,
+      low,
+      high,
+      depth,
+      finalized: Array.from(finalizedSet),
+    };
+
+    if (array[j] <= pivotValue) {
+      i++;
+      if (i !== j) {
+        [array[i], array[j]] = [array[j], array[i]];
+        yield {
+          action: "swap",
+          nodeId,
+          array: [...array],
+          swapped: [i, j],
+          pivotIndex,
+          low,
+          high,
+          depth,
+          finalized: Array.from(finalizedSet),
+        };
       }
     }
-
-    [array[i + 1], array[high]] = [array[high], array[i + 1]];
-    yield { action: 'place-pivot', array: [...array], pivotIndex: i + 1 };
-    return i + 1;
   }
 
-  if (low < high) {
-    const pi = yield* partition(low, high);
-    yield* quickSort(array, low, pi - 1);
-    yield* quickSort(array, pi + 1, high);
-  }
+  // Place pivot
+  [array[i + 1], array[high]] = [array[high], array[i + 1]];
+  finalizedSet.add(i + 1); // mark pivot index as finalized
 
-  if (low === 0 && high === arr.length - 1) {
-    yield { action: 'done', array: [...array] };
+  yield {
+    action: "place-pivot",
+    nodeId,
+    array: [...array],
+    swapped: [i + 1, high],
+    pivotIndex: i + 1,
+    low,
+    high,
+    depth,
+    finalized: Array.from(finalizedSet),
+  };
+
+  // Recurse left
+  yield* quickSort(array, low, i, depth + 1, nodeId, finalizedSet);
+  // Recurse right
+  yield* quickSort(array, i + 2, high, depth + 1, nodeId, finalizedSet);
+
+  // Done node
+  yield {
+    action: "done-node",
+    nodeId,
+    array: [...array],
+    low,
+    high,
+    depth,
+    finalized: Array.from(finalizedSet),
+  };
+
+  // Final done
+  if (low === 0 && high === arr.length - 1 && depth === 0) {
+    yield { action: "done", nodeId, array: [...array], finalized: Array.from(finalizedSet) };
   }
 }
+
+
 
 
 // The startIndex parameter is added to track the position in the original array
@@ -402,71 +484,45 @@ export function* mergeSort(arr, depth = 0, startIndex = 0) {
 
 
 
-
-
 export function* heapSort(arr) {
   const array = [...arr];
   const n = array.length;
+  const sorted = [];
+
+  function* heapify(n, i) {
+    let largest = i;
+    const left = 2 * i + 1;
+    const right = 2 * i + 2;
+
+    if (left < n) {
+      yield { action: "compare", array: [...array], comparing: [largest, left], sorted: [...sorted] };
+      if (array[left] > array[largest]) largest = left;
+    }
+    if (right < n) {
+      yield { action: "compare", array: [...array], comparing: [largest, right], sorted: [...sorted] };
+      if (array[right] > array[largest]) largest = right;
+    }
+
+    if (largest !== i) {
+      [array[i], array[largest]] = [array[largest], array[i]];
+      yield { action: "swap", array: [...array], swapped: [i, largest], sorted: [...sorted] };
+      yield* heapify(n, largest);
+    }
+  }
 
   // Build heap
   for (let i = Math.floor(n / 2) - 1; i >= 0; i--) {
-    yield* heapify(array, n, i);
+    yield* heapify(n, i);
   }
 
-  // Extract elements one by one
+  // Extract elements
   for (let i = n - 1; i > 0; i--) {
     [array[0], array[i]] = [array[i], array[0]];
-    yield { 
-      action: 'extract-max', 
-      array: [...array], 
-      swapped: [0, i],
-      sorted: Array.from({ length: n - i }, (_, k) => n - 1 - k)
-    };
-    
-    yield* heapify(array, i, 0);
+    sorted.push(i);
+    yield { action: "extract-max", array: [...array], swapped: [0, i], sorted: [...sorted] };
+    yield* heapify(i, 0);
   }
 
-  yield { 
-    action: 'done', 
-    array: [...array], 
-    sorted: Array.from({ length: n }, (_, i) => i)
-  };
-}
-
-function* heapify(array, n, i) {
-  let largest = i;
-  const left = 2 * i + 1;
-  const right = 2 * i + 2;
-
-  if (left < n) {
-    yield { 
-      action: 'compare', 
-      array: [...array], 
-      comparing: [largest, left] 
-    };
-    if (array[left] > array[largest]) {
-      largest = left;
-    }
-  }
-
-  if (right < n) {
-    yield { 
-      action: 'compare', 
-      array: [...array], 
-      comparing: [largest, right] 
-    };
-    if (array[right] > array[largest]) {
-      largest = right;
-    }
-  }
-
-  if (largest !== i) {
-    [array[i], array[largest]] = [array[largest], array[i]];
-    yield { 
-      action: 'swap', 
-      array: [...array], 
-      swapped: [i, largest] 
-    };
-    yield* heapify(array, n, largest);
-  }
+  sorted.push(0);
+  yield { action: "done", array: [...array], sorted: [...sorted] };
 }

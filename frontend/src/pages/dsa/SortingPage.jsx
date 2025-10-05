@@ -1,16 +1,22 @@
 // SortingPage.jsx
 import React from "react";
-import Navbar from "../components/Navbar";
-import AlgorithmSelector from "../components/AlgorithmSelector";
-import ArrayInput from "../components/ArrayInput";
-import SearchInput from "../components/SearchInput";
-import ControlPanel from "../components/ControlPanel";
-import VisualizationContainer from "../components/VisualizationContainer";
-import CodeDisplay from "../components/CodeDisplay";
-import { useAlgorithmVisualization } from "../hooks/useAlgorithmVisualization";
-import { getAlgorithmById } from "../data/algorithms";
+import Navbar from "../../components/Navbar";
+import ArrayInput from "../../components/Array/ArrayInput";
+import SearchInput from "../../components/Array/SearchInput";
+import ControlPanel from "../../components/Array/ControlPanel";
+import VisualizationContainer from "../../components/Array/VisualizationContainer";
+import CodeDisplay from "../../components/Array/CodeDisplay";
+import { useAlgorithmVisualization } from "../../hooks/useAlgorithmVisualization";
+import { getAlgorithmById } from "../../data/algorithms";
+import { useParams } from "react-router-dom";
+import { ChevronLeft } from "lucide-react";
+import { Link } from "react-router-dom"
 
 function SortingPage() {
+  const { algoId } = useParams();
+  console.log(algoId);
+  const selectedAlgorithm = getAlgorithmById(algoId);
+
   const {
     state,
     currentStep,
@@ -24,15 +30,11 @@ function SortingPage() {
     generateNewArray,
     setCustomArray,
     setSearchTargetValue,
-    changeAlgorithm,
     changeSpeed,
     changeArraySize,
-  } = useAlgorithmVisualization();
+  } = useAlgorithmVisualization(algoId);
 
-  const selectedAlgorithm = getAlgorithmById(state.selectedAlgorithm);
   const isSearchAlgorithm = selectedAlgorithm?.category === "searching";
-
-  if (!selectedAlgorithm) return <div>Loading...</div>;
 
   return (
     <div className="h-screen bg-gray-900 flex flex-col">
@@ -40,18 +42,37 @@ function SortingPage() {
 
       <div className="flex flex-1 overflow-hidden max-h-screen">
         {/* Left Panel: Control + Visualization */}
-       
 
         {/* Right Panel: Inputs + Code */}
         <div className="flex flex-col flex-1 h-full p-4 overflow-y-auto bg-gray-800 rounded-l-xl">
-          <AlgorithmSelector
-            selectedAlgorithm={state.selectedAlgorithm}
-            onAlgorithmChange={changeAlgorithm}
-          />
+          {/* Header section */}
+          <div className="flex items-center gap-3 mb-4">
+            <Link
+              to="/array"
+              className="
+        flex items-center justify-center
+        w-10 h-10 
+        text-[#94a3b8] 
+        hover:bg-[#334155] hover:text-[#f1f5f9] 
+        rounded-full transition-colors
+        duration-200
+      "
+              title="Back to Visualizers"
+            >
+              <ChevronLeft size={24} />
+            </Link>
+            <h2 className="text-xl font-semibold text-white">
+              {selectedAlgorithm?.name || "Algorithm"}
+            </h2>
+          </div>
+
+          {/* Array input */}
           <ArrayInput
             currentArray={originalArray}
             onArrayChange={setCustomArray}
           />
+
+          {/* Search input (if applicable) */}
           {isSearchAlgorithm && (
             <SearchInput
               onSearch={setSearchTargetValue}
@@ -59,6 +80,8 @@ function SortingPage() {
               isSearchAlgorithm={isSearchAlgorithm}
             />
           )}
+
+          {/* Code display */}
           <div className="mt-4 flex-1 overflow-y-auto">
             <CodeDisplay
               algorithmId={state.selectedAlgorithm}
@@ -67,7 +90,7 @@ function SortingPage() {
           </div>
         </div>
 
-         <div className="flex flex-col flex-3 h-full">
+        <div className="flex flex-col flex-3 h-full">
           {/* Control Panel at top */}
           <div className="p-4">
             <ControlPanel

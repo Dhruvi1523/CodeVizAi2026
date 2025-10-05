@@ -5,6 +5,12 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 
 const features = [
+   {
+    name: "Array",
+    description: "LIFO data structure supporting push and pop operations. Visualize stack operations and state.",
+    icon: Layers,
+    path: "/array",
+  },
   {
     name: "Stack",
     description: "LIFO data structure supporting push and pop operations. Visualize stack operations and state.",
