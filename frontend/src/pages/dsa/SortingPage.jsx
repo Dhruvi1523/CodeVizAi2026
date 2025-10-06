@@ -90,7 +90,7 @@ function SortingPage() {
           </div>
         </div>
 
-        <div className="flex flex-col flex-3 h-full">
+        <div className="flex flex-col flex-3 h-full overflow-auto">
           {/* Control Panel at top */}
           <div className="p-4">
             <ControlPanel

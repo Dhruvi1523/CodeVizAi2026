@@ -81,6 +81,10 @@ export const useAlgorithmVisualization = (selectedAlgorithmId) => {
     }
   }, []);
 
+  const generateRandomArray = useCallback((size) => {
+    return Array.from({ length: size }, () => Math.floor(Math.random() * 100));
+  }, []);
+
   const generateNewArray = useCallback(() => {
     const newArray = generateRandomArray(state.arraySize);
     setOriginalArray(newArray);

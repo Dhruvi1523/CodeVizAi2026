@@ -1,69 +1,68 @@
 // Counting Sort generator for visualization
 export function* countingSort(arr) {
   const array = [...arr];
-  if (array.length === 0) return;
+  if (!array.length) return;
+
   const max = Math.max(...array);
   const min = Math.min(...array);
   const range = max - min + 1;
   const count = Array(range).fill(0);
   const output = Array(array.length).fill(0);
 
-  // Step 1: Count occurrences
+  // --- Step 1: Count occurrences ---
   for (let i = 0; i < array.length; i++) {
-    count[array[i] - min]++;
+    const val = array[i];
+    count[val - min]++;
     yield {
-      action: 'count',
+      phase: "counting",
       array: [...array],
       count: [...count],
       output: [...output],
       currentIndex: i,
-      currentValue: array[i],
-      countIndex: array[i] - min,
-      phase: 'counting',
+      currentValue: val,
+      countIndex: val - min
     };
   }
 
-  // Step 2: Cumulative count
+  // --- Step 2: Cumulative count ---
   for (let i = 1; i < count.length; i++) {
     count[i] += count[i - 1];
     yield {
-      action: 'cumulative',
+      phase: "cumulative",
       array: [...array],
       count: [...count],
       output: [...output],
-      countIndex: i,
-      phase: 'cumulative',
+      countIndex: i
     };
   }
 
-  // Step 3: Build output array
+  // --- Step 3: Build output array ---
   for (let i = array.length - 1; i >= 0; i--) {
     const val = array[i];
     const idx = count[val - min] - 1;
     output[idx] = val;
     count[val - min]--;
     yield {
-      action: 'output',
+      phase: "output",
       array: [...array],
       count: [...count],
       output: [...output],
       currentIndex: i,
       currentValue: val,
       outputIndex: idx,
-      countIndex: val - min,
-      phase: 'output',
+      countIndex: val - min
     };
   }
 
+  // --- Done ---
   yield {
-    action: 'done',
-    array: [...output], // Show the sorted array as the main array
+    phase: "done",
+    array: [...output],
     count: [...count],
-    output: [...output],
-    phase: 'done',
-    sorted: Array.from({ length: output.length }, (_, i) => i)
+    output: [...output]
   };
 }
+
 
 // sortingAlgorithms.js
 export function* bubbleSort(arr) {
@@ -489,40 +488,113 @@ export function* heapSort(arr) {
   const n = array.length;
   const sorted = [];
 
-  function* heapify(n, i) {
+  // helper to get all descendants of a node
+  const getSubtreeIndices = (root, size) => {
+    const indices = [];
+    const stack = [root];
+    while (stack.length) {
+      const i = stack.pop();
+      if (i < size) {
+        indices.push(i);
+        stack.push(2 * i + 1, 2 * i + 2);
+      }
+    }
+    return indices;
+  };
+
+  function* heapify(n, i, phase = "heapify") {
+    const subtreeIndices = getSubtreeIndices(i, n);
     let largest = i;
     const left = 2 * i + 1;
     const right = 2 * i + 2;
 
+    // --- Compare with left child
     if (left < n) {
-      yield { action: "compare", array: [...array], comparing: [largest, left], sorted: [...sorted] };
+      yield {
+        action: "compare",
+        phase,
+        array: [...array],
+        comparing: [i, left],
+        heapifyRoot: i,
+        heapifySubtree: subtreeIndices,
+        sorted: [...sorted],
+        explanation: `Comparing parent (${array[i]}) with left child (${array[left]}) to find the larger value.`,
+      };
       if (array[left] > array[largest]) largest = left;
     }
+
+    // --- Compare with right child
     if (right < n) {
-      yield { action: "compare", array: [...array], comparing: [largest, right], sorted: [...sorted] };
+      yield {
+        action: "compare",
+        phase,
+        array: [...array],
+        comparing: [largest, right],
+        heapifyRoot: i,
+        heapifySubtree: subtreeIndices,
+        sorted: [...sorted],
+        explanation: `Comparing current largest (${array[largest]}) with right child (${array[right]}) to maintain max-heap property.`,
+      };
       if (array[right] > array[largest]) largest = right;
     }
 
+    // --- Swap if necessary
     if (largest !== i) {
       [array[i], array[largest]] = [array[largest], array[i]];
-      yield { action: "swap", array: [...array], swapped: [i, largest], sorted: [...sorted] };
-      yield* heapify(n, largest);
+      yield {
+        action: "swap",
+        phase,
+        array: [...array],
+        swapped: [i, largest],
+        heapifyRoot: i,
+        heapifySubtree: subtreeIndices,
+        sorted: [...sorted],
+        explanation: `Swapping ${array[largest]} with ${array[i]} to restore the heap property.`,
+      };
+
+      // Recursive heapify
+      yield* heapify(n, largest, phase);
     }
   }
 
-  // Build heap
+  // --- Build the heap
   for (let i = Math.floor(n / 2) - 1; i >= 0; i--) {
-    yield* heapify(n, i);
+    const subtreeIndices = getSubtreeIndices(i, n);
+    yield {
+      action: "phase-change",
+      phase: "build",
+      array: [...array],
+      heapifyRoot: i,
+      heapifySubtree: subtreeIndices,
+      sorted: [...sorted],
+      explanation: `Building heap: starting heapify at index ${i} (${array[i]}).`,
+    };
+    yield* heapify(n, i, "build");
   }
 
-  // Extract elements
+  // --- Extract elements one by one
   for (let i = n - 1; i > 0; i--) {
     [array[0], array[i]] = [array[i], array[0]];
     sorted.push(i);
-    yield { action: "extract-max", array: [...array], swapped: [0, i], sorted: [...sorted] };
-    yield* heapify(i, 0);
+    yield {
+      action: "extract-max",
+      phase: "extract",
+      array: [...array],
+      swapped: [0, i],
+      sorted: [...sorted],
+      explanation: `Extracting the largest element (${array[i]}) to its final position.`,
+    };
+
+    yield* heapify(i, 0, "heapify");
   }
 
   sorted.push(0);
-  yield { action: "done", array: [...array], sorted: [...sorted] };
+  yield {
+    action: "done",
+    phase: "sorted",
+    array: [...array],
+    sorted: [...sorted],
+    explanation: `✅ All elements are now sorted in ascending order.`,
+  };
 }
+
