@@ -5,7 +5,8 @@ import MergeVisualization from './MergeVisualization';
 import QuickSortVisualization from './QuickSortVisualization';
 import HeapSortVisualization from './HeapSortVisualization';
 import CountingSortVisualization from './CountingSortVisualization';
-// import { AlgorithmStep } from '../types';
+import LinearSearchVisualization from './LinearSearchVisualization';
+import BinarySearchVisualization from './BinarySearchVisualization';
 
 const VisualizationContainer = ({
   algorithmId,
@@ -44,6 +45,14 @@ const VisualizationContainer = ({
 
   if (algorithmId === 'counting-sort') {
     return <CountingSortVisualization step={currentStep} />;
+  }
+
+  if(algorithmId === 'linear-search') {
+    return <LinearSearchVisualization step={currentStep} />;
+  }
+
+  if(algorithmId === 'binary-search') {
+    return <BinarySearchVisualization step={currentStep} />;
   }
 
   const maxValue = Math.max(...currentStep.array);

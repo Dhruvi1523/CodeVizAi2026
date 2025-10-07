@@ -16,7 +16,7 @@ export const useAlgorithmVisualization = (selectedAlgorithmId) => {
 
   // Generate initial array
   useEffect(() => {
-    generateSteps(state.selectedAlgorithm, originalArray);
+    generateSteps(state.selectedAlgorithm, originalArray , searchTarget);
   }, [state.selectedAlgorithm, originalArray, searchTarget]);
 
   const generateSteps = useCallback((algorithmId, array, target) => {
@@ -96,9 +96,9 @@ export const useAlgorithmVisualization = (selectedAlgorithmId) => {
     setSearchTarget(null);
   }, []);
 
-  const setSearchTargetValue = useCallback((target) => {
+  const setSearchTargetValue = (target) => {
     setSearchTarget(target);
-  }, []);
+  }
  
 
   const changeSpeed = useCallback((speed) => {

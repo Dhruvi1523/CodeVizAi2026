@@ -1,6 +1,3 @@
-
-// import { Algorithm } from '../types';
-
 export const algorithms = [
   {
     id: 'bubble-sort',
@@ -10,7 +7,8 @@ export const algorithms = [
     spaceComplexity: 'O(1)',
     stable: true,
     description: 'Compares adjacent elements and swaps them if they are in the wrong order.',
-    visualization: 'bars'
+    visualization: 'bars',
+    path: '/array/sorting/bubble-sort'
   },
   {
     id: 'selection-sort',
@@ -20,7 +18,8 @@ export const algorithms = [
     spaceComplexity: 'O(1)',
     stable: false,
     description: 'Finds the minimum element and places it at the beginning.',
-    visualization: 'bars'
+    visualization: 'bars',
+    path: '/array/sorting/selection-sort'
   },
   {
     id: 'insertion-sort',
@@ -30,7 +29,8 @@ export const algorithms = [
     spaceComplexity: 'O(1)',
     stable: true,
     description: 'Builds the sorted array one element at a time.',
-    visualization: 'bars'
+    visualization: 'bars',
+    path: '/array/sorting/insertion-sort'
   },
   {
     id: 'merge-sort',
@@ -40,7 +40,8 @@ export const algorithms = [
     spaceComplexity: 'O(n)',
     stable: true,
     description: 'Divides the array into halves, sorts them, and merges back together.',
-    visualization: 'tree'
+    visualization: 'tree',
+    path: '/array/sorting/merge-sort'
   },
   {
     id: 'quick-sort',
@@ -50,7 +51,8 @@ export const algorithms = [
     spaceComplexity: 'O(log n)',
     stable: false,
     description: 'Selects a pivot and partitions the array around it.',
-    visualization: 'bars'
+    visualization: 'bars',
+    path: '/array/sorting/quick-sort'
   },
   {
     id: 'heap-sort',
@@ -60,7 +62,8 @@ export const algorithms = [
     spaceComplexity: 'O(1)',
     stable: false,
     description: 'Converts array to heap, then repeatedly extracts maximum.',
-    visualization: 'bars'
+    visualization: 'bars',
+    path: '/array/sorting/heap-sort'
   },
   {
     id: 'counting-sort',
@@ -71,6 +74,7 @@ export const algorithms = [
     stable: true,
     description: 'Counts occurrences of each value, then reconstructs the sorted array.',
     visualization: 'counting',
+    path: '/array/sorting/counting-sort'
   },
   {
     id: 'linear-search',
@@ -80,7 +84,8 @@ export const algorithms = [
     spaceComplexity: 'O(1)',
     stable: true,
     description: 'Searches for an element by checking each element sequentially.',
-    visualization: 'bars'
+    visualization: 'bars',
+    path: '/array/searching/linear-search'
   },
   {
     id: 'binary-search',
@@ -90,7 +95,8 @@ export const algorithms = [
     spaceComplexity: 'O(1)',
     stable: true,
     description: 'Searches for an element by repeatedly dividing the search space in half.',
-    visualization: 'bars'
+    visualization: 'bars',
+    path: '/array/searching/binary-search'
   }
 ];
 

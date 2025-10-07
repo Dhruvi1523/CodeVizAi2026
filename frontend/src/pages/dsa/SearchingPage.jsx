@@ -1,18 +1,18 @@
 // SortingPage.jsx
 import React from "react";
 import Navbar from "../../components/Navbar";
-import ArrayInput from "../../components/Array/ArrayInput";
-import SearchInput from "../../components/Array/SearchInput";
-import ControlPanel from "../../components/Array/ControlPanel";
-import VisualizationContainer from "../../components/Array/VisualizationContainer";
-import CodeDisplay from "../../components/Array/CodeDisplay";
+import ArrayInput from "../../components/array/ArrayInput";
+import SearchInput from "../../components/array/SearchInput";
+import ControlPanel from "../../components/array/ControlPanel";
+import VisualizationContainer from "../../components/array/VisualizationContainer";
+import CodeDisplay from "../../components/array/CodeDisplay";
 import { useAlgorithmVisualization } from "../../hooks/useAlgorithmVisualization";
 import { getAlgorithmById } from "../../data/algorithms";
 import { useParams } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
 import { Link } from "react-router-dom"
 
-function SortingPage() {
+function SearchingPage() {
   const { algoId } = useParams();
   const selectedAlgorithm = getAlgorithmById(algoId);
 
@@ -71,14 +71,12 @@ function SortingPage() {
             onArrayChange={setCustomArray}
           />
 
-          {/* Search input (if applicable) */}
-          {isSearchAlgorithm && (
+        
             <SearchInput
               onSearch={setSearchTargetValue}
               currentArray={originalArray}
               isSearchAlgorithm={isSearchAlgorithm}
             />
-          )}
 
           {/* Code display */}
           <div className="mt-4 flex-1 overflow-y-auto">
@@ -122,4 +120,4 @@ function SortingPage() {
   );
 }
 
-export default SortingPage;
+export default SearchingPage;

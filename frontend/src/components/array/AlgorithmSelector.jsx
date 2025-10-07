@@ -51,7 +51,7 @@ const AlgorithmSelector = () => {
               <h3 className="text-xl font-semibold mb-2 text-[#f1f5f9]">{algo.name}</h3>
               <p className="text-[#94a3b8] text-sm mb-4 flex-grow">{algo.description}</p>
               <Link
-                to={`/sorting/${algo.id}`}
+                to={algo.path}
                 className="inline-block text-sm font-medium text-white bg-[#6366f1] hover:bg-[#4f46e5] px-4 py-2 rounded-lg text-center transition-colors"
               >
                 Visualize

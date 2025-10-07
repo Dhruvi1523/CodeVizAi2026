@@ -23,6 +23,7 @@ import SortingPage from "./pages/dsa/SortingPage.jsx"
 import DpVisualizationPage from "./components/dp/DpVisualizationPage.jsx";
 import DynamicProgramingPage from "./pages/dsa/DynamicProgramingPage.jsx";
 import AlgorithmSelector from "./components/Array/AlgorithmSelector.jsx";
+import SearchingPage from "./pages/dsa/SearchingPage.jsx";
 // ProtectedRoute wrapper
 function ProtectedRoute({ children }) {
   return (
@@ -92,7 +93,8 @@ function App() {
       <Route path="/heap" element={<HeapPage />} />
       <Route path="/dynamic-programming" element={<DynamicProgrammingPage />} /> */}
       <Route path="/array" element={<AlgorithmSelector/>} />
-      <Route path="/sorting/:algoId" element={<SortingPage />} /> 
+      <Route path="/array/sorting/:algoId" element={<SortingPage />} /> 
+      <Route path="/array/searching/:algoId" element={<SearchingPage />} /> 
       </Routes>
     </Router>
   );
