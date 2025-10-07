@@ -1,5 +1,5 @@
 import { Routes, Route, Link } from "react-router-dom";
-import { SignIn, SignUp } from "@clerk/clerk-react";
+// import { SignIn, SignUp } from "@clerk/clerk-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import FeaturesSection from "../components/FeaturesSelection";

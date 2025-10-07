@@ -29,17 +29,12 @@ const features = [
     icon: List,
     path: "/linked-list",
   },
+ 
   {
-    name: "Binary Search Tree",
-    description: "A binary tree that maintains sorted data with O(log n) operations. Learn about tree traversals.",
-    icon: Binary,
-    path: "/bst",
-  },
-  {
-    name: "AVL Tree",
+    name: "Tree",
     description: "Self-balancing BST that maintains height balance. Visualize rotations and balancing.",
     icon: TreePine,
-    path: "/avl-tree",
+    path: "/tree-dsa",
   },
   {
     name: "Graph",

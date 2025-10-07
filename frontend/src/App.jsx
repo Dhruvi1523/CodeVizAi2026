@@ -1,9 +1,9 @@
-import { RedirectToSignIn, SignedIn, SignedOut } from "@clerk/clerk-react";
+// import { RedirectToSignIn, SignedIn, SignedOut } from "@clerk/clerk-react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import LandscapeLayout from "./layouts/LandscapeLayout";
 import HomePage from "./pages/HomePage";
-import SignInPage from "./pages/SignInPage";
-import SignUpPage from "./pages/SignUpPage";
+// import SignInPage from "./pages/SignInPage";
+// import SignUpPage from "./pages/SignUpPage";
 import TracerPanel from "./j1/TracerTest";
 import CodePage from "./pages/CodePage";
 import ComplexityAnalyzerPage from "./pages/ComplexityAnalyzerPage";
@@ -13,7 +13,14 @@ import StackPage from "./pages/dsa/StackPage.jsx";
 import QueuePage from "./pages/dsa/QueuePage.jsx";
 import LinkedListPage from "./pages/dsa/LinkedListPage.jsx";
 import SortingPage from "./pages/dsa/SortingPage.jsx"
-
+import TreePage from "./pages/dsa/TreePage.jsx";
+import BinarySearchTree from "./components/tree/BinarySearchTree.jsx";
+import GeneralTree from "./components/tree/GeneralTree.jsx";
+import AVLTree from "./components/tree/AVLTree.jsx";
+import RedBlackTree from "./components/tree/RedBlackTree.jsx";
+import BinaryTree from "./components/tree/BinaryTree.jsx";
+import BTree from "./components/tree/BTree.jsx";
+import BPlusTree from "./components/tree/BPlusTree.jsx";
 
 // import BstPage from "./pages/dsa/BstPage";
 // import AvlTreePage from "./pages/dsa/AvlTreePage";
@@ -25,16 +32,16 @@ import DynamicProgramingPage from "./pages/dsa/DynamicProgramingPage.jsx";
 import AlgorithmSelector from "./components/Array/AlgorithmSelector.jsx";
 import SearchingPage from "./pages/dsa/SearchingPage.jsx";
 // ProtectedRoute wrapper
-function ProtectedRoute({ children }) {
-  return (
-    <>
-      <SignedIn>{children}</SignedIn>
-      <SignedOut>
-        <RedirectToSignIn />
-      </SignedOut>
-    </>
-  );
-}
+// function ProtectedRoute({ children }) {
+//   return (
+//     <>
+//       <SignedIn>{children}</SignedIn>
+//       <SignedOut>
+//         <RedirectToSignIn />
+//       </SignedOut>
+//     </>
+//   );
+// }
 
 function App() {
   return (
@@ -45,21 +52,21 @@ function App() {
           <HomePage />
         </ProtectedRoute>} /> */}
         <Route path="/" element={<HomePage />} />
-        <Route path="/sign-in/*" element={<SignInPage />} />
-        <Route path="/sign-up/*" element={<SignUpPage />} />
+        {/* <Route path="/sign-in/*" element={<SignInPage />} />
+        <Route path="/sign-up/*" element={<SignUpPage />} /> */}
         <Route path="/Tracer/*" element={<TracerPanel />} />
         <Route
           path="/flow-chart-generator/*"
           element={<FlowchartGeneratorPage />}
         />
-        <Route
+        {/* <Route
           path="/"
           element={
             <ProtectedRoute>
               <HomePage />
             </ProtectedRoute>
           }
-        />
+        /> */}
 
         <Route
           path="/dynamic-programming"
@@ -95,6 +102,14 @@ function App() {
       <Route path="/array" element={<AlgorithmSelector/>} />
       <Route path="/array/sorting/:algoId" element={<SortingPage />} /> 
       <Route path="/array/searching/:algoId" element={<SearchingPage />} /> 
+      <Route path="/tree-dsa" element={<TreePage />} />
+        <Route path="/tree/binary-search-tree" element={<BinarySearchTree />} />
+        <Route path="/tree/avl-tree" element={<AVLTree />} />
+        <Route path="/tree/red-black-tree" element={<RedBlackTree />} />
+        <Route path="/tree/binary-tree" element={<BinaryTree />} />
+        <Route path="/tree/general-tree" element={<GeneralTree />} />
+        <Route path="/tree/b-tree" element={<BTree />} />
+        <Route path="/tree/b-plus-tree" element={<BPlusTree />} />
       </Routes>
     </Router>
   );
