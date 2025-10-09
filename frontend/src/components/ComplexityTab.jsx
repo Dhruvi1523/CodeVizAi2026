@@ -76,7 +76,7 @@ export default function ComplexityTab({ code, inputSizes }) {
   );
 
   return (
-    <div className="p-6 space-y-6 overflow-y-auto h-[80vh] bg-[#0f172a] text-gray-100">
+    <div className="h-full space-y-6 overflow-y-auto p-4  bg-[#0f172a] text-gray-100">
       {/* Function Selector */}
       {detected_functions.length > 1 && (
         <div className="flex items-center gap-2">

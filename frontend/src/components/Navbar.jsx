@@ -5,7 +5,6 @@ import { Code, BarChart3, GitBranch, Share2, MessageSquareText } from 'lucide-re
 // Define navigation links as an array for easy mapping
 const navLinks = [
   { to: '/code', icon: <Code size={16} />, label: 'Code Editor' },
-  { to: '/complexity', icon: <BarChart3 size={16} />, label: 'Complexity' },
   { to: '/dsa-visualizer', icon: <GitBranch size={16} />, label: 'DSA Visualizer' },
   { to: '/flowchart', icon: <Share2 size={16} />, label: 'Flowchart' },
   { to: '/explanation', icon: <MessageSquareText size={16} />, label: 'Explanation' },
