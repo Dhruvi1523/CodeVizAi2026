@@ -185,3 +185,809 @@ for num in arr:
 
 print("Sum of array elements:", total)
 
+tracer.py
+
+# tracer.py
+
+import sys
+import io
+import copy
+import inspect
+import ast
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+
+# --- FastAPI App Setup ---
+app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+class CodeRequest(BaseModel):
+    code: str
+
+# --- Tracing Logic ---
+
+class CallTreeNode:
+    """A class to represent a node in our call tree for recursion."""
+    def __init__(self, name, args, step_index, parent_id=None):
+        self.id = id(self)
+        self.parent_id = parent_id
+        self.name = name
+        self.args = args
+        self.start_step = step_index
+        self.end_step = -1
+        self.children = []
+        self.return_value = None
+
+    def to_dict(self):
+        """Converts the node and its children to a dictionary."""
+        return {
+            "id": self.id,
+            "parent_id": self.parent_id,
+            "name": self.name,
+            "args": self.args,
+            "start_step": self.start_step,
+            "end_step": self.end_step,
+            "children": [child.to_dict() for child in self.children],
+            "return_value": self.return_value,
+        }
+
+def serialize_value(v):
+    """Converts a Python object into a structured dictionary for the frontend."""
+    if isinstance(v, (int, float, str, bool, type(None))):
+        return {"type": "primitive", "value": v}
+    
+    if isinstance(v, list):
+        # Limit list size to avoid performance issues with huge lists
+        snapshot = [repr(item) for item in v[:50]]
+        value = [serialize_value(item) for item in v[:50]]
+        return {"type": "list", "id": id(v), "value": value, "snapshot": snapshot}
+
+    # Fallback for other objects
+    if hasattr(v, '__dict__'):
+        return {"type": "object", "id": id(v), "class_name": v.__class__.__name__}
+        
+    return {"type": "other", "value": repr(v)}
+
+def _parse_line_event(line, frame):
+    """Use AST to understand what's happening on a line."""
+    try:
+        tree = ast.parse(line.strip())
+        if not tree.body: return line.strip()
+        node = tree.body[0]
+        
+        # Detect conditional statements (if, while)
+        if isinstance(node, (ast.If, ast.While)):
+            try:
+                condition_str = ast.unparse(node.test).strip()
+                result = bool(eval(condition_str, frame.f_globals, frame.f_locals))
+                return {
+                    "type": "condition_check",
+                    "condition_str": condition_str,
+                    "result": result
+                }
+            except Exception:
+                pass
+        
+        # Detect print function calls
+        if isinstance(node, ast.Expr) and isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Name) and node.value.func.id == 'print':
+            if node.value.args:
+                try:
+                    printed_value = eval(ast.unparse(node.value.args[0]), frame.f_globals, frame.f_locals)
+                    return {
+                        "type": "print_event",
+                        "value": printed_value
+                    }
+                except Exception:
+                    pass
+        
+        # Detect loops (This is a simplified detection, more robust logic is in the tracer)
+        if isinstance(node, (ast.For, ast.While)):
+            loop_variable = None
+            if isinstance(node, ast.For) and isinstance(node.target, ast.Name):
+                loop_variable = node.target.id
+            return {
+                "type": "loop_start", # Changed from loop_iteration to avoid confusion
+                "loop_type": "for" if isinstance(node, ast.For) else "while",
+                "loop_variable_name": loop_variable
+            }
+
+        # Detect list method calls (e.g., my_list.append(10))
+        if isinstance(node, ast.Expr) and isinstance(node.value, ast.Call):
+            call_node = node.value
+            if isinstance(call_node.func, ast.Attribute) and hasattr(call_node.func.value, 'id'):
+                var_name = call_node.func.value.id
+                method_name = call_node.func.attr
+                try:
+                    arg_values = [eval(ast.unparse(arg), frame.f_globals, frame.f_locals) for arg in call_node.args]
+                    list_obj = eval(var_name, frame.f_globals, frame.f_locals)
+                    list_snapshot_before = copy.copy(list_obj) if isinstance(list_obj, list) else None
+                    
+                    # --- NEW: Create "after" snapshot for append ---
+                    list_snapshot_after = None
+                    if list_snapshot_before is not None and method_name == 'append' and len(arg_values) == 1:
+                        list_snapshot_after = copy.copy(list_snapshot_before)
+                        list_snapshot_after.append(arg_values[0])
+                    # (Can add more methods like pop, etc. here)
+
+                    return {
+                        "type": "array_operation",
+                        "variable": var_name,
+                        "method": method_name,
+                        "args": [repr(arg) for arg in arg_values],
+                        "list_snapshot_before": list_snapshot_before,
+                        "list_snapshot_after": list_snapshot_after # <-- NEW
+                    }
+                except Exception:
+                    pass
+
+        if isinstance(node, ast.Assign):
+            # Detect binary operations (e.g., c = a + b)
+            if isinstance(node.value, ast.BinOp):
+                op_map = {ast.Add: '+', ast.Sub: '-', ast.Mult: '*', ast.Div: '/', ast.Mod: '%', ast.Pow: '**', ast.LShift: '<<', ast.RShift: '>>', ast.BitOr: '|', ast.BitAnd: '&', ast.BitXor: '^', ast.FloorDiv: '//'}
+                try:
+                    left_name, right_name = ast.unparse(node.value.left).strip(), ast.unparse(node.value.right).strip()
+                    left_val, right_val = eval(left_name, frame.f_globals, frame.f_locals), eval(right_name, frame.f_globals, frame.f_locals)
+                    result_val = eval(ast.unparse(node.value).strip(), frame.f_globals, frame.f_locals)
+                    return {
+                        "type": "binary_operation", "operands": {left_name: left_val, right_name: right_val},
+                        "operator": op_map.get(type(node.value.op), '?'), "result_variable": node.targets[0].id, "result_value": result_val
+                    }
+                except Exception: pass
+            
+            # --- MODIFIED: Detect list item assignment with BEFORE and AFTER snapshots ---
+            if isinstance(node.targets[0], ast.Subscript):
+                try:
+                    var_name = node.targets[0].value.id
+                    list_obj = eval(var_name, frame.f_globals, frame.f_locals)
+                    
+                    list_snapshot_before = copy.copy(list_obj) if isinstance(list_obj, list) else None
+                    
+                    new_value = eval(ast.unparse(node.value), frame.f_globals, frame.f_locals)
+                    # Use ast.unparse to correctly handle slices
+                    index_value_str = ast.unparse(node.targets[0].slice)
+                    index_value = eval(index_value_str, frame.f_globals, frame.f_locals)
+                    
+                    list_snapshot_after = copy.copy(list_snapshot_before)
+                    list_snapshot_after[index_value] = new_value
+
+                    return {
+                        "type": "array_operation",
+                        "variable": var_name,
+                        "method": "assign_at_index",
+                        "index": index_value,
+                        "value": new_value,
+                        "list_snapshot_before": list_snapshot_before,
+                        "list_snapshot_after": list_snapshot_after
+                    }
+                except Exception: pass
+
+            # Detect simple assignments (e.g., a = 10)
+            try:
+                value = eval(ast.unparse(node.value), frame.f_globals, frame.f_locals)
+                return {"type": "assignment", "variable": node.targets[0].id, "value": value}
+            except Exception: pass
+
+        # Detect augmented assignments (e.g., result *= i)
+        if isinstance(node, ast.AugAssign):
+            op_map = {ast.Add: '+', ast.Sub: '-', ast.Mult: '*', ast.Div: '/', ast.Mod: '%', ast.Pow: '**', ast.LShift: '<<', ast.RShift: '>>', ast.BitOr: '|', ast.BitAnd: '&', ast.BitXor: '^', ast.FloorDiv: '//'}
+            try:
+                target_name = ast.unparse(node.target).strip()
+                value_name = ast.unparse(node.value).strip()
+                target_val = eval(target_name, frame.f_globals, frame.f_locals)
+                value_val = eval(value_name, frame.f_globals, frame.f_locals)
+                operator_str = op_map.get(type(node.op), '?')
+                result_val = eval(f"{target_val} {operator_str} {value_val}")
+
+                return {
+                    "type": "binary_operation",
+                    "operands": {target_name: target_val, value_name: value_val},
+                    "operator": operator_str,
+                    "result_variable": target_name,
+                    "result_value": result_val
+                }
+            except Exception:
+                pass
+
+        if isinstance(node.targets[0], ast.Subscript):
+            try:
+                var_name = node.targets[0].value.id
+                # Check if the variable is actually a dictionary
+                dict_obj = eval(var_name, frame.f_globals, frame.f_locals)
+                if isinstance(dict_obj, dict):
+                    
+                    dict_snapshot_before = copy.copy(dict_obj)
+
+                    # Evaluate the key and the new value
+                    key = eval(ast.unparse(node.targets[0].slice), frame.f_globals, frame.f_locals)
+                    new_value = eval(ast.unparse(node.value), frame.f_globals, frame.f_locals)
+
+                    dict_snapshot_after = copy.copy(dict_snapshot_before)
+                    dict_snapshot_after[key] = new_value
+                    
+                    # Determine if it was an add or an update
+                    method = "add_key" if key not in dict_snapshot_before else "update_key"
+
+                    return {
+                        "type": "dictionary_operation",
+                        "variable": var_name,
+                        "method": method,
+                        "key": repr(key),
+                        "value": repr(new_value),
+                        "dict_snapshot_before": dict_snapshot_before,
+                        "dict_snapshot_after": dict_snapshot_after
+                    }
+            except Exception:
+                pass # Failsafe
+
+            return line.strip() # Fallback for unhandled lines
+    except Exception:
+        return line.strip()
+
+def run_with_trace(code_str: str):
+    trace_steps = []
+    output_buffer = io.StringIO()
+    call_stack = []
+    call_tree_root = None
+    node_stack = []
+    source_lines_cache = {}
+    
+    loop_states = {}
+
+    def tracer(frame, event, arg):
+        nonlocal call_stack, call_tree_root, node_stack, loop_states
+        
+        func_name = frame.f_code.co_name
+        lineno = frame.f_lineno
+        current_step_index = len(trace_steps)
+
+        if frame.f_code not in source_lines_cache:
+            try:
+                source_lines_cache[frame.f_code] = inspect.getsourcelines(frame.f_code)[0]
+            except (TypeError, OSError):
+                source_lines_cache[frame.f_code] = code_str.strip().split('\n')
+
+        line_text = ""
+        if source_lines_cache[frame.f_code]:
+            line_index = lineno - frame.f_code.co_firstlineno
+            if 0 <= line_index < len(source_lines_cache[frame.f_code]):
+                line_text = source_lines_cache[frame.f_code][line_index]
+        
+        # This complex loop logic is better handled by the main 'line' event processing
+        # The original code here was a bit unreliable, so it's removed to avoid duplicate/confusing events.
+        
+        # --- NEW: Explicit "call" event for clearer visualization ---
+        if event == "call":
+            if func_name != '<module>':
+                try:
+                    args = inspect.getargvalues(frame)
+                    arg_values = {arg: serialize_value(args.locals[arg]) for arg in args.args}
+                    
+                    caller_lineno = frame.f_back.f_lineno if frame.f_back else -1
+                    caller_locals = {}
+                    if frame.f_back:
+                        caller_locals = {k: serialize_value(v) for k, v in frame.f_back.f_locals.items() if not k.startswith('__')}
+
+                    trace_steps.append({
+                        "line": caller_lineno,
+                        "event": {
+                            "type": "call",
+                            "func_name": func_name,
+                            "arguments": arg_values
+                        },
+                        "locals": caller_locals,
+                        "stack": copy.deepcopy(call_stack)
+                    })
+                except Exception:
+                    pass # Failsafe
+
+                # --- Original logic for call tree and stack ---
+                call_stack.append(func_name)
+                try:
+                    args_repr = {k: repr(v) for k, v in inspect.getargvalues(frame).locals.items()}
+                except Exception:
+                    args_repr = {}
+                parent_id = node_stack[-1].id if node_stack else None
+                new_node = CallTreeNode(func_name, args_repr, current_step_index, parent_id)
+                if not call_tree_root:
+                    call_tree_root = new_node
+                elif node_stack:
+                    node_stack[-1].children.append(new_node)
+                node_stack.append(new_node)
+
+
+        if event == "line":
+            # --- MODIFIED: Use a more robust _parse_line_event call ---
+            line_event = _parse_line_event(line_text, frame)
+            
+            # Convert simple assignment values to serialized form for consistency
+            if isinstance(line_event, dict) and line_event.get("type") == "assignment":
+                line_event["value"] = serialize_value(line_event["value"])
+
+            locals_copy = {k: serialize_value(v) for k, v in frame.f_locals.items() if not k.startswith('__')}
+            trace_steps.append({
+                "line": lineno, "event": line_event, "locals": locals_copy,
+                "stack": copy.deepcopy(call_stack),
+            })
+        
+        if event == "return":
+            if call_stack and call_stack[-1] == func_name:
+                call_stack.pop()
+
+            # The logic for `return_value` and `function_return_used` is good for recursion, so we keep it.
+            if func_name != '<module>' and not (node_stack and node_stack[-1].name == func_name):
+                   trace_steps.append({
+                       "line": lineno,
+                       "event": { "type": "return_value", "value": serialize_value(arg) },
+                       "locals": {k: serialize_value(v) for k, v in frame.f_locals.items() if not k.startswith('__')},
+                       "stack": copy.deepcopy(call_stack)
+                   })
+
+            if func_name != '<module>' and node_stack and node_stack[-1].name == func_name:
+                node = node_stack.pop()
+                node.return_value = serialize_value(arg)
+                node.end_step = len(trace_steps)
+                
+                if node_stack:
+                    parent_node = node_stack[-1]
+                    trace_steps.append({
+                        "line": frame.f_back.f_lineno if frame.f_back else frame.f_lineno,
+                        "event": { "type": "function_return_used", "source_node_id": node.id, "target_node_id": parent_node.id, "value": node.return_value },
+                        "locals": {k: serialize_value(v) for k, v in frame.f_back.f_locals.items() if not k.startswith('__')} if frame.f_back else {},
+                        "stack": copy.deepcopy(call_stack)
+                    })
+                else: # Root return
+                    trace_steps.append({
+                        "line": lineno,
+                        "event": { "type": "function_root_return", "source_node_id": node.id, "value": node.return_value },
+                        "locals": {},
+                        "stack": copy.deepcopy(call_stack)
+                    })
+        return tracer
+
+    original_stdout = sys.stdout
+    sys.stdout = output_buffer
+    sys.settrace(tracer)
+    try:
+        global_scope = {'__name__': '__main__'}
+        compiled_code = compile(code_str, '<string>', 'exec')
+        exec(compiled_code, global_scope)
+    except Exception as e:
+        # --- NEW: Create a specific "error" event in the trace ---
+        error_line = -1
+        if trace_steps:
+            # Get the line number of the last successful step
+            error_line = trace_steps[-1]['line']
+        
+        trace_steps.append({
+            "line": error_line,
+            "event": {
+                "type": "error",
+                "error_type": type(e).__name__,
+                "error_message": str(e)
+            },
+            # Use the state from the last successful step
+            "locals": trace_steps[-1]['locals'] if trace_steps else {},
+            "stack": trace_steps[-1]['stack'] if trace_steps else []
+        })
+        output_buffer.write(f"\n--- ERROR ---\n{type(e).__name__}: {e}")
+    finally:
+        sys.settrace(None)
+        sys.stdout = original_stdout
+    
+    return {
+        "trace": trace_steps, "output": output_buffer.getvalue(),
+        "call_tree": call_tree_root.to_dict() if call_tree_root else None
+    }
+
+# This function is not used by the tracer but is kept for the /flowchart endpoint
+def generate_simple_flowchart(code_str: str):
+    # ... (Your existing flowchart code remains unchanged) ...
+    flowchart = "graph TD\n"
+    flowchart += "    classDef loop_node fill:#8b5cf6,stroke:#a78bfa,stroke-width:2px;\n"
+    lines = code_str.strip().split('\n')
+    last_node_id = "Start(Start)"
+    flowchart += f"    {last_node_id}\n"
+    node_counter = 0
+    indent_level_stack = [(-1, "Start")]
+    
+    last_loop_node = None
+
+    for i, line in enumerate(lines):
+        line_number = i + 1
+        trimmed_line = line.strip()
+        if not trimmed_line or trimmed_line.startswith('#'): continue
+
+        node_counter += 1
+        node_id = f"N{node_counter}_L{line_number}"
+        sanitized_line = trimmed_line.replace('"', '#quot;')
+        current_indent = len(line) - len(line.lstrip(' '))
+        
+        while indent_level_stack and current_indent <= indent_level_stack[-1][0]:
+            indent_level_stack.pop()
+        
+        from_node_id = indent_level_stack[-1][1]
+        
+        if trimmed_line.startswith(('if', 'elif', 'for', 'while')):
+            flowchart += f'    {from_node_id} --> {node_id}{{{sanitized_line}}};\n'
+            indent_level_stack.append((current_indent, node_id))
+            last_loop_node = node_id
+            if trimmed_line.startswith(('for', 'while')):
+                flowchart += f'    class {node_id} loop_node;\n'
+        else:
+            flowchart += f'    {from_node_id} --> {node_id}["{sanitized_line}"];\n'
+            if indent_level_stack and current_indent == indent_level_stack[-1][0]:
+                indent_level_stack[-1] = (current_indent, node_id)
+            else:
+                indent_level_stack.append((current_indent, node_id))
+                
+        if last_loop_node and current_indent < indent_level_stack[-1][0] and (trimmed_line.startswith(('if', 'elif')) is False):
+             flowchart += f'    {node_id} --- {last_loop_node};'
+             last_loop_node = None
+             
+    last_actual_node = f"N{node_counter}_L{line_number}" if node_counter > 0 else "Start"
+    flowchart += f"    {last_actual_node} --> End(End);"
+    return flowchart
+
+
+@app.post("/trace")
+def trace_code_endpoint(request: CodeRequest):
+    try:
+        return run_with_trace(request.code)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/flowchart")
+def create_flowchart_endpoint(request: CodeRequest):
+    try:
+        return {"mermaid": generate_simple_flowchart(request.code)}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+
+        import React, { useState, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
+import { Play, Pause, SkipForward, SkipBack, RefreshCw } from "lucide-react";
+
+// --- Custom Hook to track previous state ---
+const usePrevious = (value) => {
+    const ref = useRef();
+    useEffect(() => {
+        ref.current = value;
+    });
+    return ref.current;
+};
+
+
+// --- Mock Data ---
+// This trace is updated to better reflect a full bubble sort for visualization.
+const bubbleSortTrace = [
+    { line: 2, event: null, stack: ['<module>'], locals: { arr: { type: 'list', value: [34, 10, 25, 12, 22] } }, output: "" },
+    { line: 3, event: null, stack: ['<module>'], locals: { arr: { type: 'list', value: [34, 10, 25, 12, 22] }, n: { type: 'int', value: 5 } }, output: "" },
+    { line: 4, event: null, stack: ['<module>'], locals: { arr: { type: 'list', value: [34, 10, 25, 12, 22] }, n: { type: 'int', value: 5 }, i: { type: 'int', value: 0 } }, output: "" },
+    { line: 5, event: null, stack: ['<module>'], locals: { arr: { type: 'list', value: [34, 10, 25, 12, 22] }, n: { type: 'int', value: 5 }, i: { type: 'int', value: 0 }, j: { type: 'int', value: 0 } }, output: "" },
+    { line: 6, event: { type: 'array_operation', operation: 'compare', variable_name: 'arr', indices: [0, 1] }, stack: ['<module>'], locals: { arr: { type: 'list', value: [34, 10, 25, 12, 22] }, n: { type: 'int', value: 5 }, i: { type: 'int', value: 0 }, j: { type: 'int', value: 0 } }, output: "" },
+    { line: 7, event: { type: 'assignment', variable_name: 'temp' }, stack: ['<module>'], locals: { arr: { type: 'list', value: [34, 10, 25, 12, 22] }, n: { type: 'int', value: 5 }, i: { type: 'int', value: 0 }, j: { type: 'int', value: 0 }, temp: { type: 'int', value: 34 } }, output: "" },
+    { line: 8, event: { type: 'array_operation', operation: 'swap', variable_name: 'arr', indices: [0, 1] }, stack: ['<module>'], locals: { arr: { type: 'list', value: [10, 34, 25, 12, 22] }, n: { type: 'int', value: 5 }, i: { type: 'int', value: 0 }, j: { type: 'int', value: 0 }, temp: { type: 'int', value: 34 } }, output: "" },
+    { line: 5, event: null, stack: ['<module>'], locals: { arr: { type: 'list', value: [10, 34, 25, 12, 22] }, n: { type: 'int', value: 5 }, i: { type: 'int', value: 0 }, j: { type: 'int', value: 1 } }, output: "" },
+    { line: 6, event: { type: 'array_operation', operation: 'compare', variable_name: 'arr', indices: [1, 2] }, stack: ['<module>'], locals: { arr: { type: 'list', value: [10, 34, 25, 12, 22] }, n: { type: 'int', value: 5 }, i: { type: 'int', value: 0 }, j: { type: 'int', value: 1 } }, output: "" },
+    { line: 7, event: { type: 'assignment', variable_name: 'temp' }, stack: ['<module>'], locals: { arr: { type: 'list', value: [10, 34, 25, 12, 22] }, n: { type: 'int', value: 5 }, i: { type: 'int', value: 0 }, j: { type: 'int', value: 1 }, temp: { type: 'int', value: 34 } }, output: "" },
+    { line: 8, event: { type: 'array_operation', operation: 'swap', variable_name: 'arr', indices: [1, 2] }, stack: ['<module>'], locals: { arr: { type: 'list', value: [10, 25, 34, 12, 22] }, n: { type: 'int', value: 5 }, i: { type: 'int', value: 0 }, j: { type: 'int', value: 1 }, temp: { type: 'int', value: 34 } }, output: "" },
+    { line: 10, event: null, stack: ['<module>'], locals: { arr: { type: 'list', value: [10, 12, 22, 25, 34] }, n: { type: 'int', value: 5 }, i: { type: 'int', value: 4 } }, output: "[10, 12, 22, 25, 34]\n" },
+];
+
+// --- 1. ENHANCED VISUALIZER COMPONENTS ---
+
+const ArrayVisualizer = ({ name, arrayData, event, locals }) => {
+    if (!arrayData || !Array.isArray(arrayData.value)) return null;
+
+    const { value } = arrayData;
+    const itemWidth = 64;
+    const itemMargin = 4; // Corresponds to mx-1 -> 8px total
+
+    const pointers = Object.entries(locals)
+        .filter(([varName, data]) => data.type === 'int' && typeof data.value === 'number' && data.value < value.length && ['i', 'j', 'k'].includes(varName))
+        .map(([varName, data]) => ({ name: varName, index: data.value }));
+
+    const getHighlightClass = (index) => {
+        if (event?.type === 'array_operation' && event.variable_name === name && event.indices?.includes(index)) {
+            switch (event.operation) {
+                case 'compare': return 'border-yellow-400 bg-yellow-400/10 scale-110 shadow-lg shadow-yellow-400/20';
+                case 'swap': return 'border-green-400 bg-green-400/10 scale-110 shadow-lg shadow-green-400/20';
+                default: return 'border-blue-400 bg-blue-400/10 scale-110';
+            }
+        }
+        return 'border-slate-700 bg-slate-800';
+    };
+
+    return (
+        <motion.div layout className="p-4 bg-slate-900/70 rounded-lg mb-4">
+            <h3 className="font-mono text-lg text-slate-300 mb-2">{name}: <span className="text-sm text-slate-400">List</span></h3>
+            <div className="relative pt-8 mt-2">
+                <div className="flex items-center justify-start">
+                    {value.map((val, index) => (
+                        <motion.div
+                            key={`${name}-${val}-${index}`}
+                            layout
+                            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                            className={`flex flex-col items-center p-0.5 rounded-md border-2 transition-all duration-300 mx-1 ${getHighlightClass(index)}`}
+                        >
+                            <div className="bg-slate-700 text-white font-mono text-xl font-bold px-4 py-2 rounded-t-md w-16 text-center">
+                                {String(val)}
+                            </div>
+                            <div className="text-slate-400 text-xs w-full text-center bg-slate-600 rounded-b-md py-0.5">
+                                {index}
+                            </div>
+                        </motion.div>
+                    ))}
+                </div>
+                {pointers.map(({ name, index }) => (
+                     <motion.div
+                        key={name}
+                        className="absolute -top-2 flex flex-col items-center"
+                        initial={{ x: index * (itemWidth + itemMargin * 2) + itemWidth / 2 - 10 }}
+                        animate={{ x: index * (itemWidth + itemMargin * 2) + itemWidth / 2 - 10 }}
+                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                     >
+                        <span className="text-pink-400 font-mono font-bold text-sm">{name}</span>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-pink-400">
+                            <path d="M12 5v14m0-14l-4 4m4-4l4 4"/>
+                        </svg>
+                    </motion.div>
+                ))}
+            </div>
+            <div className="flex text-xs text-slate-400 mt-3 space-x-4 font-mono">
+                <span>Length: {value.length}</span>
+                <span>First: {value[0]}</span>
+                <span>Last: {value[value.length - 1]}</span>
+            </div>
+        </motion.div>
+    );
+};
+
+const DataStructuresPanel = ({ locals, event }) => {
+    const visualizableItems = Object.entries(locals)
+        .filter(([, data]) => data.type === 'list' || data.type === 'dict');
+
+    return (
+        <div className="w-full h-full">
+            <h2 className="text-lg font-semibold text-slate-300 p-2 border-b border-slate-700/50">Python Data Structures</h2>
+            <div className="p-2">
+                {visualizableItems.length === 0 && <p className="text-slate-500 text-center p-4">No data structures to display.</p>}
+                <AnimatePresence>
+                    {visualizableItems.map(([name, data]) => {
+                        if (data.type === 'list') {
+                            return <ArrayVisualizer key={name} name={name} arrayData={data} event={event} locals={locals} />;
+                        }
+                        return null;
+                    })}
+                </AnimatePresence>
+            </div>
+        </div>
+    );
+};
+
+
+// --- 2. HELPER COMPONENTS ---
+
+const Navbar = () => (
+    <nav className="p-4 bg-[#1e293b] border-b border-slate-700/50 text-center">
+        <h1 className="text-xl font-bold text-white">Code Execution Visualizer</h1>
+    </nav>
+);
+
+const EditorPanel = ({ code, setCode, onRunMock }) => (
+    <div className="h-full flex flex-col bg-[#1e293b] p-4 gap-4">
+        <div className="flex justify-between items-center">
+            <h2 className="text-lg font-semibold text-slate-300">Code Editor</h2>
+            <button onClick={onRunMock} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-md font-semibold transition-colors">
+                Run
+            </button>
+        </div>
+        <textarea
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+            className="w-full h-full bg-[#0f172a] text-slate-200 p-4 rounded-md border border-slate-700/50 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-sm"
+        />
+    </div>
+);
+
+
+const PlaybackControls = ({ isPlaying, onPlay, onPause, onNext, onPrev, onReset, onScrub, currentStep, totalSteps }) => (
+    <div className="bg-[#0f172a] p-2 border-t border-slate-700/50">
+        <div className="flex items-center gap-2">
+             <div className="flex items-center justify-center gap-2">
+                <button onClick={onReset} className="p-2 hover:bg-slate-700 rounded-full"><RefreshCw size={18} /></button>
+                <button onClick={onPrev} className="p-2 hover:bg-slate-700 rounded-full"><SkipBack size={18} /></button>
+                <button onClick={isPlaying ? onPause : onPlay} className="p-2 bg-indigo-600 hover:bg-indigo-700 rounded-full text-white">
+                    {isPlaying ? <Pause size={20} /> : <Play size={20} />}
+                </button>
+                <button onClick={onNext} className="p-2 hover:bg-slate-700 rounded-full"><SkipForward size={18} /></button>
+            </div>
+            <span className="text-xs font-mono text-slate-400">Step {currentStep} of {totalSteps > 0 ? totalSteps - 1 : 0}</span>
+            <input
+                type="range"
+                min="0"
+                max={totalSteps > 0 ? totalSteps - 1 : 0}
+                value={currentStep}
+                onChange={(e) => onScrub(Number(e.target.value))}
+                className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer"
+            />
+        </div>
+    </div>
+);
+
+const CallStack = ({ stackFrames }) => (
+    <div className="p-2">
+        <h3 className="font-bold text-lg p-2 text-center text-[#94a3b8]">Call Stack</h3>
+        <div className="mt-2">
+             <AnimatePresence>
+                {stackFrames.map((frame, index) => (
+                    <motion.div
+                        key={`${frame}-${index}`} layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -20 }}
+                        className="bg-slate-800/80 p-2 rounded-md mb-2 text-center border border-slate-700"
+                    >
+                        <span className="font-semibold text-slate-300">{frame}</span>
+                    </motion.div>
+                ))}
+            </AnimatePresence>
+        </div>
+    </div>
+);
+
+const VariablesVisualizer = ({ locals, prevLocals }) => {
+    return (
+    <div className="p-2">
+        <h3 className="font-bold text-lg p-2 text-center text-[#94a3b8]">Variables</h3>
+         <div className="p-2 font-mono text-sm space-y-2">
+            {Object.entries(locals).map(([name, data]) => {
+                const prevValue = prevLocals?.[name]?.value;
+                const hasChanged = prevValue !== undefined && JSON.stringify(prevValue) !== JSON.stringify(data.value);
+                
+                return (
+                <motion.div
+                    key={name}
+                    animate={{ backgroundColor: hasChanged ? ["#facc15", "rgba(51, 65, 85, 0.5)"] : "rgba(51, 65, 85, 0.5)" }}
+                    transition={{ duration: 1.5 }}
+                    className="flex justify-between items-start p-2 bg-slate-800/50 rounded border border-slate-700/50"
+                >
+                    <span className="text-slate-300">{name}:</span>
+                    <span className="text-cyan-400 font-bold text-right break-all">{JSON.stringify(data.value)}</span>
+                </motion.div>
+            )})}
+        </div>
+    </div>
+)};
+
+const ConsoleOutput = ({ output }) => (
+     <div className="bg-[#0f172a] p-2 rounded-lg m-2 border border-slate-700/50">
+        <h3 className="font-mono text-sm text-slate-400 px-2">Console Output</h3>
+        <pre className="text-white font-mono text-sm p-2 whitespace-pre-wrap min-h-[2em]">{output || ""}</pre>
+    </div>
+);
+
+// --- 3. RESTRUCTURED TraceLayout Component ---
+const TraceLayout = ({ trace, currentStep, setCurrentStep, isPlaying, onPlay, onPause, onNext, onPrev, onReset }) => {
+    if (!trace || trace.length === 0) {
+        return <p className="text-[#94a3b8] text-center pt-8">Click "Run" to start tracing.</p>;
+    }
+    
+    const currentTraceStep = trace[currentStep] || {};
+    const prevTraceStep = usePrevious(currentTraceStep);
+    const { locals, event, output } = currentTraceStep;
+
+    return (
+        <div className="flex flex-col h-full bg-[#1e293b]">
+            <div className="flex-grow flex min-h-0">
+                <div className="flex-grow w-2/3 flex flex-col">
+                    <div className="flex-grow p-2 overflow-auto">
+                        <DataStructuresPanel locals={locals || {}} event={event} />
+                    </div>
+                     <ConsoleOutput output={output} />
+                </div>
+
+                <div className="w-1/3 flex flex-col border-l border-slate-700/50">
+                    <div className="flex-1 overflow-y-auto">
+                        <VariablesVisualizer locals={locals || {}} prevLocals={prevTraceStep?.locals} />
+                    </div>
+                    <div className="border-t border-slate-700/50">
+                         <CallStack stackFrames={currentTraceStep?.stack || []} />
+                    </div>
+                </div>
+            </div>
+            
+            <PlaybackControls
+                isPlaying={isPlaying} onPlay={onPlay} onPause={onPause} onNext={onNext} onPrev={onPrev} onReset={onReset}
+                currentStep={currentStep} totalSteps={trace.length} onScrub={setCurrentStep}
+            />
+        </div>
+    );
+};
+
+
+// --- 4. Main CodePage Component ---
+const CodePage = () => {
+    const [code, setCode] = useState(
+`# Bubble Sort
+arr = [34, 10, 25, 12, 22]
+n = len(arr)
+for i in range(n):
+    for j in range(0, n - i - 1):
+        if arr[j] > arr[j + 1]:
+            temp = arr[j]
+            arr[j] = arr[j+1]
+            arr[j+1] = temp
+print(arr)`
+    );
+    const [trace, setTrace] = useState([]);
+    const [currentStep, setCurrentStep] = useState(0);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [speed, setSpeed] = useState(800);
+
+    const resetState = () => {
+        setTrace([]);
+        setCurrentStep(0);
+        setIsPlaying(false);
+    };
+
+    const handleRunMock = () => {
+        resetState();
+        setTrace(bubbleSortTrace);
+    };
+
+    useEffect(() => {
+        let interval;
+        if (isPlaying && currentStep < trace.length - 1) {
+            interval = setInterval(() => {
+                setCurrentStep((prev) => prev + 1);
+            }, speed);
+        } else if (isPlaying && currentStep >= trace.length - 1) {
+            setIsPlaying(false);
+        }
+        return () => clearInterval(interval);
+    }, [isPlaying, currentStep, trace.length, speed]);
+
+
+    return (
+        <div className="flex flex-col h-screen bg-[#0f172a] text-[#f1f5f9] font-sans">
+            <Navbar />
+            <div className="flex-grow min-h-0 p-4">
+                <PanelGroup direction="horizontal" className="h-full">
+                    <Panel defaultSize={35} minSize={25}>
+                        <EditorPanel code={code} setCode={setCode} onRunMock={handleRunMock} />
+                    </Panel>
+                    <PanelResizeHandle className="w-2 bg-[#0f172a] hover:bg-indigo-500/50 transition-colors flex items-center justify-center">
+                        <div className="w-1 h-10 bg-slate-700 rounded-full"></div>
+                    </PanelResizeHandle>
+                    <Panel defaultSize={65} minSize={30}>
+                        <div className="h-full w-full flex flex-col bg-[#1e293b] rounded-lg border border-slate-700/50">
+                           <TraceLayout
+                                trace={trace}
+                                currentStep={currentStep}
+                                setCurrentStep={setCurrentStep}
+                                isPlaying={isPlaying}
+                                onPlay={() => setIsPlaying(true)}
+                                onPause={() => setIsPlaying(false)}
+                                onNext={() => setCurrentStep((s) => Math.min(trace.length - 1, s + 1))}
+                                onPrev={() => setCurrentStep((s) => Math.max(0, s - 1))}
+                                onReset={() => setCurrentStep(0)}
+                            />
+                        </div>
+                    </Panel>
+                </PanelGroup>
+            </div>
+        </div>
+    );
+};
+
+export default CodePage;
+

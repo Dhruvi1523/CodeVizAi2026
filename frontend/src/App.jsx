@@ -1,108 +1,68 @@
-// import { RedirectToSignIn, SignedIn, SignedOut } from "@clerk/clerk-react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import LandscapeLayout from "./layouts/LandscapeLayout";
+
+// 📄 Pages
 import HomePage from "./pages/HomePage";
-// import SignInPage from "./pages/SignInPage";
-// import SignUpPage from "./pages/SignUpPage";
 import TracerPanel from "./j1/TracerTest";
 import CodePage from "./pages/CodePage";
 import ComplexityAnalyzerPage from "./pages/ComplexityAnalyzerPage";
 import DSAVisualizerPage from "./pages/DsaVisualizerPage.jsx";
 import FlowchartGeneratorPage from "./pages/FlowchartGeneratorPage";
+
+// 🧮 DSA Pages
 import StackPage from "./pages/dsa/StackPage.jsx";
 import QueuePage from "./pages/dsa/QueuePage.jsx";
 import LinkedListPage from "./pages/dsa/LinkedListPage.jsx";
-import SortingPage from "./pages/dsa/SortingPage.jsx"
-import TreePage from "./pages/dsa/TreePage.jsx";
-import BinarySearchTree from "./components/tree/BinarySearchTree.jsx";
-import GeneralTree from "./components/tree/GeneralTree.jsx";
-import AVLTree from "./components/tree/AVLTree.jsx";
-import RedBlackTree from "./components/tree/RedBlackTree.jsx";
-import BinaryTree from "./components/tree/BinaryTree.jsx";
-import BTree from "./components/tree/BTree.jsx";
-import BPlusTree from "./components/tree/BPlusTree.jsx";
-
-// import BstPage from "./pages/dsa/BstPage";
-// import AvlTreePage from "./pages/dsa/AvlTreePage";
-// import GraphPage from "./pages/dsa/GraphPage";
-// import HeapPage from "./pages/dsa/HeapPage";
-// import DynamicProgrammingPage from "./pages/dsa/DynamicProgrammingPage";
-import DpVisualizationPage from "./components/dp/DpVisualizationPage.jsx";
-import DynamicProgramingPage from "./pages/dsa/DynamicProgramingPage.jsx";
-import AlgorithmSelector from "./components/Array/AlgorithmSelector.jsx";
+import SortingPage from "./pages/dsa/SortingPage.jsx";
 import SearchingPage from "./pages/dsa/SearchingPage.jsx";
-// ProtectedRoute wrapper
-// function ProtectedRoute({ children }) {
-//   return (
-//     <>
-//       <SignedIn>{children}</SignedIn>
-//       <SignedOut>
-//         <RedirectToSignIn />
-//       </SignedOut>
-//     </>
-//   );
-// }
+import TreePage from "./pages/dsa/TreePage.jsx";
+import BinarySearchTree from "./pages/dsa/BinarySearchTree.jsx";
+import BinaryTree from "./pages/dsa/BinaryTree.jsx";
+import AVLTree from "./pages/dsa/AVLTree.jsx";
+import RedBlackTree from "./pages/dsa/RedBlackTree.jsx";
+import GeneralTree from "./pages/dsa/GeneralTree.jsx";
+import BTree from "./pages/dsa/BTree.jsx";
+import BPlusTree from "./pages/dsa/BPlusTree.jsx";
+import DynamicProgramingPage from "./pages/dsa/DynamicProgramingPage.jsx";
+
+// 📊 DP Components
+import DpVisualizationPage from "./components/dp/DpVisualizationPage.jsx";
+
+// 🔍 Array Algorithm
+import AlgorithmSelector from "./components/Array/AlgorithmSelector.jsx";
 
 function App() {
   return (
     <Router>
       <Routes>
-        {/* Public route */}
-        {/* <Route path="/" element={<ProtectedRoute>
-          <HomePage />
-        </ProtectedRoute>} /> */}
+        {/* 🏠 Home */}
         <Route path="/" element={<HomePage />} />
-        {/* <Route path="/sign-in/*" element={<SignInPage />} />
-        <Route path="/sign-up/*" element={<SignUpPage />} /> */}
+
+        {/* 🧭 Tools */}
         <Route path="/Tracer/*" element={<TracerPanel />} />
-        <Route
-          path="/flow-chart-generator/*"
-          element={<FlowchartGeneratorPage />}
-        />
-        {/* <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <HomePage />
-            </ProtectedRoute>
-          }
-        /> */}
+        <Route path="/flow-chart-generator/*" element={<FlowchartGeneratorPage />} />
+        <Route path="/code" element={<LandscapeLayout><CodePage /></LandscapeLayout>} />
+        <Route path="/complexity-analyzer" element={<ComplexityAnalyzerPage />} />
 
-        <Route
-          path="/dynamic-programming"
-          element={<DynamicProgramingPage />}
-        />
-        <Route
-          path="/dynamic-programming/:algoId"
-          element={<DpVisualizationPage />}
-        />
-        <Route
-          path="/code"
-          element={
-            <LandscapeLayout>
-              <CodePage />
-            </LandscapeLayout>
-          }
-        />
-        <Route
-          path="/complexity-analyzer"
-          element={<ComplexityAnalyzerPage />}
-        />
+        {/* 🧮 DSA Visualizer */}
         <Route path="/dsa-visualizer" element={<DSAVisualizerPage />} />
-        <Route path="/flowchart" element={<FlowchartGeneratorPage />} />
 
+        {/* 📊 Dynamic Programming */}
+        <Route path="/dynamic-programming" element={<DynamicProgramingPage />} />
+        <Route path="/dynamic-programming/:algoId" element={<DpVisualizationPage />} />
+
+        {/* 🧱 Data Structures */}
         <Route path="/stack" element={<StackPage />} />
         <Route path="/queue" element={<QueuePage />} />
         <Route path="/linked-list" element={<LinkedListPage />} />
-        {/* <Route path="/bst" element={<BstPage />} />
-      <Route path="/avl-tree" element={<AvlTreePage />} />
-      <Route path="/graph" element={<GraphPage />} />
-      <Route path="/heap" element={<HeapPage />} />
-      <Route path="/dynamic-programming" element={<DynamicProgrammingPage />} /> */}
-      <Route path="/array" element={<AlgorithmSelector/>} />
-      <Route path="/array/sorting/:algoId" element={<SortingPage />} /> 
-      <Route path="/array/searching/:algoId" element={<SearchingPage />} /> 
-      <Route path="/tree-dsa" element={<TreePage />} />
+
+        {/* 🧮 Array Algorithms */}
+        <Route path="/array" element={<AlgorithmSelector />} />
+        <Route path="/array/sorting/:algoId" element={<SortingPage />} />
+        <Route path="/array/searching/:algoId" element={<SearchingPage />} />
+
+        {/* 🌳 Trees */}
+        <Route path="/tree-dsa" element={<TreePage />} />
         <Route path="/tree/binary-search-tree" element={<BinarySearchTree />} />
         <Route path="/tree/avl-tree" element={<AVLTree />} />
         <Route path="/tree/red-black-tree" element={<RedBlackTree />} />

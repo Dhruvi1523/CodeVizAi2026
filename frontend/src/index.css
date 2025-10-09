@@ -13,6 +13,27 @@
   /* --- Custom Scrollbar Styling (Cross-browser) --- */
 
   /* For Firefox */
+}
+/* For Monaco Editor line highlighting */
+.highlight-line {
+  background-color: #3b82f633; /* A semi-transparent blue */
+  margin-left: 3px !important; /* Ensures the highlight touches the line numbers */
+}
+.highlight-error {
+  background-color: #ef444440; /* A semi-transparent red */
+  margin-left: 3px !important;
+}
+
+.highlight-variable {
+  background-color: rgba(99, 102, 241, 0.4); /* A semi-transparent indigo */
+  border-radius: 3px;
+}
+
+:root{
+ 
+
+@layer base {
+
   * {
     scrollbar-width: thin;
     scrollbar-color: #334155 #1e293b; /* thumb-color track-color */
