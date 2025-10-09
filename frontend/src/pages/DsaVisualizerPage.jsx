@@ -5,6 +5,12 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 
 const features = [
+   {
+    name: "Array",
+    description: "LIFO data structure supporting push and pop operations. Visualize stack operations and state.",
+    icon: Layers,
+    path: "/array",
+  },
   {
     name: "Stack",
     description: "LIFO data structure supporting push and pop operations. Visualize stack operations and state.",
@@ -23,17 +29,12 @@ const features = [
     icon: List,
     path: "/linked-list",
   },
+ 
   {
-    name: "Binary Search Tree",
-    description: "A binary tree that maintains sorted data with O(log n) operations. Learn about tree traversals.",
-    icon: Binary,
-    path: "/bst",
-  },
-  {
-    name: "AVL Tree",
+    name: "Tree",
     description: "Self-balancing BST that maintains height balance. Visualize rotations and balancing.",
     icon: TreePine,
-    path: "/avl-tree",
+    path: "/tree-dsa",
   },
   {
     name: "Graph",
@@ -52,6 +53,12 @@ const features = [
     description: "Optimization technique to solve problems by breaking them into overlapping subproblems.",
     icon: BrainCircuit,
     path: "/dynamic-programming",
+  },
+  {
+    name: "Sorting Algorithms",
+    description: "Sorting Algorithms",
+    icon: BrainCircuit,
+    path: "/sorting",
   },
 ];
 

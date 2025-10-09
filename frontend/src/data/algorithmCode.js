@@ -209,7 +209,7 @@ function heapify(arr, n, i) {
 // let result = linearSearch(arr, target);
 // 
 // if (result !== -1) {
-//   console.log("Element found at index " + result);
+//   console.log(\`Element found at index \${result}\`);
 // } else {
 //   console.log("Element not found");
 // }
@@ -255,6 +255,6 @@ function heapify(arr, n, i) {
 // Requirement: Array must be sorted`
 };
 
-export function getAlgorithmCode(algorithmId) {
+export const getAlgorithmCode = (algorithmId) => {
   return algorithmCode[algorithmId] || 'Code not available';
-}
+};

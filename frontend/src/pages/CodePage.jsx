@@ -1,11 +1,12 @@
 // src/pages/CodePage.jsx
 
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback, act } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import Navbar from "../components/Navbar";
 import TraceLayout from "../components/TraceLayout";
 import EditorPanel from "../components/EditorPanel";
+import ComplexityTab from "../components/ComplexityTab";
 import { AlertTriangle, X } from "lucide-react";
 
 const CodePage = () => {
@@ -43,11 +44,26 @@ print("Factorial of", num, "is:", factorial(num))
   const mermaidContainerRef = useRef(null);
   const [finalOutputToShow, setFinalOutputToShow] = useState(null);
   const decorationIds = useRef([]);
-  const [runtimeError, setRuntimeError] = useState(null);
-  const [callBridge, setCallBridge] = useState(null);
-  const callStackFrameRefs = useRef(new Map()); // To store refs to stack frames
-  const [hoveredVariable, setHoveredVariable] = useState(null);
-  const variableHighlightIds = useRef([]);
+
+  // useEffect(() => {
+  //   if (window.mermaid) {
+  //       window.mermaid.initialize({ startOnLoad: false, theme: 'dark', securityLevel: 'loose' });
+  //       return;
+  //   }
+  //   const script = document.createElement('script');
+  //   script.src = 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js';
+  //   script.onload = () => {
+  //     if (window.mermaid) {
+  //       window.mermaid.initialize({ startOnLoad: false, theme: 'dark', securityLevel: 'loose' });
+  //     }
+  //   };
+  //   document.body.appendChild(script);
+  //   return () => {
+  //     if (document.body.contains(script)) {
+  //       document.body.removeChild(script);
+  //     }
+  //   };
+  // }, []);
 
   const handleRun = async () => {
     setIsLoading(true);
@@ -416,6 +432,15 @@ print("Factorial of", num, "is:", factorial(num))
                 code={code}
                 setCode={setCode}
                 onRun={handleRun}
+                // Pass other handlers like onFlowchart if needed
+                isLoading={isLoading}
+                editorRef={editorRef}
+                monacoRef={monacoRef}
+              />
+              <EditorPanel
+                code={code}
+                setCode={setCode}
+                onRun={handleRun}
                 isLoading={isLoading}
                 editorRef={editorRef}
                 monacoRef={monacoRef}
@@ -449,6 +474,16 @@ print("Factorial of", num, "is:", factorial(num))
                       }`}
                     >
                       Output
+                    </button>
+                    <button
+                      onClick={() => setActiveTab("complexity")}
+                      className={`px-4 py-2 font-semibold transition-colors ${
+                        activeTab === "output"
+                          ? "border-b-2 border-blue-500 text-white"
+                          : "text-gray-400"
+                      }`}
+                    >
+                      Complexity
                     </button>
                   </div>
                   <div className="flex-grow bg-[#1e293b] rounded-lg border border-[#334155] m-4 min-h-0 ">
@@ -501,6 +536,12 @@ print("Factorial of", num, "is:", factorial(num))
                           <pre className="bg-gray-900 p-4 rounded-lg whitespace-pre-wrap h-full">
                             {output || "No output produced."}
                           </pre>
+                        )}
+                        {activeTab === "complexity" && (
+                          <ComplexityTab
+                            code={code}
+                           
+                          />
                         )}
                       </motion.div>
                     </AnimatePresence>
