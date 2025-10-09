@@ -44,6 +44,12 @@ print("Factorial of", num, "is:", factorial(num))
   const mermaidContainerRef = useRef(null);
   const [finalOutputToShow, setFinalOutputToShow] = useState(null);
   const decorationIds = useRef([]);
+  const [runtimeError , setRuntimeError] = useState(null);
+    const [callBridge, setCallBridge] = useState(null);
+  const callStackFrameRefs = useRef(new Map()); // To store refs to stack frames
+  const [hoveredVariable, setHoveredVariable] = useState(null);
+  const variableHighlightIds = useRef([]);
+
 
   // useEffect(() => {
   //   if (window.mermaid) {

@@ -1,6 +1,10 @@
+import timeit
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from routers import flowchart, dp_visualizer, tracer, complexity_analyzer
+from routers import flowchart, dp_visualizer, tracer
+from pydantic import BaseModel
+import ast
+from memory_profiler import memory_usage
 
 # --- FastAPI App Initialization ---
 app = FastAPI()
@@ -18,8 +22,181 @@ app.add_middleware(
 app.include_router(flowchart.router, tags=["Flowchart Generator"])
 app.include_router(dp_visualizer.router, prefix="/api", tags=["DP Visualizer"])
 app.include_router(tracer.router, tags=["Trace Code"])
-app.include_router(complexity_analyzer.router, tags=["Complexity Analyzer"])
+# app.include_router(complexity_analyzer.router, tags=["Complexity Analyzer"])
 
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the DP and Flowchart Visualizer API"}
+
+
+
+
+class CodeRequest(BaseModel):
+    code: str
+    func_name: str | None = None
+    input_sizes: list[int] = [10, 20, 40, 80]
+
+# ----------------------
+# Function extraction
+# ----------------------
+def extract_functions(code: str):
+    tree = ast.parse(code)
+    return [node.name for node in ast.walk(tree) if isinstance(node, ast.FunctionDef)]
+
+# ----------------------
+# AST complexity analysis
+# ----------------------
+def analyze_ast_complexity(code: str):
+    tree = ast.parse(code)
+    max_loop_depth = 0
+    recursion_type = None  # None, "linear", "exponential"
+    max_recursion_depth = 0
+
+    def visit_node(node, current_depth=0, func_name=None):
+        nonlocal max_loop_depth, recursion_type, max_recursion_depth
+
+        # Loop depth
+        if isinstance(node, (ast.For, ast.While)):
+            max_loop_depth = max(max_loop_depth, current_depth + 1)
+
+        # Recursion detection
+        if isinstance(node, ast.FunctionDef):
+            # Count recursive calls in function body
+            call_count = sum(
+                1 for nn in ast.walk(node)
+                if isinstance(nn, ast.Call) and getattr(nn.func, 'id', '') == node.name
+            )
+            if call_count > 0:
+                recursion_type = "linear" if call_count == 1 else "exponential"
+                max_recursion_depth = max(max_recursion_depth, 1)  # minimum 1
+            # Visit children
+            for child in ast.iter_child_nodes(node):
+                visit_node(child, current_depth, node.name)
+        else:
+            for child in ast.iter_child_nodes(node):
+                visit_node(child, current_depth + (1 if isinstance(node, (ast.For, ast.While)) else 0), func_name)
+
+    visit_node(tree)
+    return {
+        "max_loop_depth": max_loop_depth,
+        "recursion_type": recursion_type,
+        "max_recursion_depth": max_recursion_depth
+    }
+
+# ----------------------
+# Profiling (optional)
+# ----------------------
+def profile_times(func, input_sizes):
+    times = []
+    for n in input_sizes:
+        try:
+            t = timeit.timeit(lambda: func(n), number=3)
+            times.append(t)
+        except Exception:
+            times.append(float('nan'))
+    return times
+
+def profile_memory(func, input_sizes):
+    mems = []
+    for n in input_sizes:
+        try:
+            mem = max(memory_usage((func, (n,)), interval=0.01))
+            mems.append(mem)
+        except Exception:
+            mems.append(float('nan'))
+    return mems
+
+# ----------------------
+# Complexity estimation
+# ----------------------
+def estimate_time_complexity(ast_result):
+    if ast_result["recursion_type"] == "linear":
+        return "O(n)"
+    elif ast_result["recursion_type"] == "exponential":
+        return "O(2^n)"
+    elif ast_result["max_loop_depth"] > 0:
+        return f"O(n^{ast_result['max_loop_depth']})"
+    else:
+        return "O(1)"
+
+def estimate_space_complexity(ast_result):
+    """
+    Simple heuristic:
+    - Recursion depth contributes to stack space
+    - Linear recursion or loops allocating arrays -> O(n)
+    """
+    space = 1  # O(1) default
+    if ast_result["recursion_type"] == "linear":
+        space = "O(n)"
+    elif ast_result["recursion_type"] == "exponential":
+        space = "O(n)"  # stack grows linearly
+    elif ast_result["max_loop_depth"] > 0:
+        space = "O(n)"  # loops creating arrays/lists
+    return space
+
+# ----------------------
+# LLM-style explanation
+# ----------------------
+def llm_explain(ast_result, time_complexity, space_complexity):
+    loops = ast_result["max_loop_depth"]
+    recursion = ast_result["recursion_type"]
+    explanation = f"Maximum loop nesting depth: {loops}. "
+    if recursion:
+        explanation += f"Recursion type: {recursion}. "
+    explanation += f"Estimated time complexity: {time_complexity}. "
+    explanation += f"Estimated space complexity: {space_complexity}."
+    teaching_note = "Consider reducing loop nesting or using iterative approaches for recursion."
+    return {
+        "time_complexity": time_complexity,
+        "space_complexity": space_complexity,
+        "explanation": explanation,
+        "teaching_note": teaching_note
+    }
+
+# ----------------------
+# FastAPI endpoint
+# ----------------------
+@app.post("/analyze_code")
+def analyze_code(request: CodeRequest):
+    code = request.code
+    func_name = request.func_name
+
+    # Extract functions
+    functions = extract_functions(code)
+    if not func_name:
+        if functions:
+            func_name = functions[0]
+        else:
+            func_name = "main"
+            code = "def main():\n" + "\n".join(["    " + line for line in code.splitlines()])
+
+    # AST analysis
+    ast_result = analyze_ast_complexity(code)
+
+    # Execute code
+    try:
+        exec(code, globals())
+        func = globals()[func_name]
+    except Exception as e:
+        return {"error": f"Code execution failed: {e}"}
+
+    # Profiling
+    times = profile_times(func, request.input_sizes)
+    memory = profile_memory(func, request.input_sizes)
+
+    # Complexity estimation
+    time_complexity = estimate_time_complexity(ast_result)
+    space_complexity = estimate_space_complexity(ast_result)
+
+    # LLM explanation
+    llm_result = llm_explain(ast_result, time_complexity, space_complexity)
+
+    return {
+        "static_analysis": ast_result,
+        "profiling_times": times,
+        "profiling_memory": memory,
+        "empirical_time_complexity": time_complexity,
+        "empirical_space_complexity": space_complexity,
+        "llm_explanation": llm_result,
+        "detected_functions": functions
+    }
