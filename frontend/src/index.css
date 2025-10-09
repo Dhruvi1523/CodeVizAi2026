@@ -16,6 +16,11 @@ body {
   margin-left: 3px !important;
 }
 
+.highlight-variable {
+  background-color: rgba(99, 102, 241, 0.4); /* A semi-transparent indigo */
+  border-radius: 3px;
+}
+
 :root{
  
 

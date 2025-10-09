@@ -6,6 +6,7 @@ import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import Navbar from "../components/Navbar";
 import TraceLayout from "../components/TraceLayout";
 import EditorPanel from "../components/EditorPanel";
+import { AlertTriangle, X } from "lucide-react";
 
 const CodePage = () => {
   const [code, setCode] = useState(
@@ -42,27 +43,11 @@ print("Factorial of", num, "is:", factorial(num))
   const mermaidContainerRef = useRef(null);
   const [finalOutputToShow, setFinalOutputToShow] = useState(null);
   const decorationIds = useRef([]);
-
-
-  // useEffect(() => {
-  //   if (window.mermaid) {
-  //       window.mermaid.initialize({ startOnLoad: false, theme: 'dark', securityLevel: 'loose' });
-  //       return;
-  //   }
-  //   const script = document.createElement('script');
-  //   script.src = 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js';
-  //   script.onload = () => {
-  //     if (window.mermaid) {
-  //       window.mermaid.initialize({ startOnLoad: false, theme: 'dark', securityLevel: 'loose' });
-  //     }
-  //   };
-  //   document.body.appendChild(script);
-  //   return () => {
-  //     if (document.body.contains(script)) {
-  //       document.body.removeChild(script);
-  //     }
-  //   };
-  // }, []);
+  const [runtimeError, setRuntimeError] = useState(null);
+  const [callBridge, setCallBridge] = useState(null);
+  const callStackFrameRefs = useRef(new Map()); // To store refs to stack frames
+  const [hoveredVariable, setHoveredVariable] = useState(null);
+  const variableHighlightIds = useRef([]);
 
   const handleRun = async () => {
     setIsLoading(true);
@@ -76,6 +61,8 @@ print("Factorial of", num, "is:", factorial(num))
     setLineTrails([]);
     setLoopArrow(null);
     setFinalOutputToShow(null);
+    setRuntimeError(null);
+    callStackFrameRefs.current.clear();
     try {
       const res = await fetch("http://127.0.0.1:8000/trace", {
         method: "POST",
@@ -101,117 +88,123 @@ print("Factorial of", num, "is:", factorial(num))
     }
   };
 
-  // const handleFlowchart = useCallback(async () => {
-  //   setIsLoading(true);
-  //   setMermaidCode("");
-  //   setError("");
-  //   try {
-  //     const res = await fetch("http://127.0.0.1:8000/flowchart", {
-  //       method: "POST", headers: { "Content-Type": "application/json" },
-  //       body: JSON.stringify({ code: code || "" }),
-  //     });
-  //       if (!res.ok) {
-  //       const data = await res.json();
-  //       throw new Error(data.detail || `HTTP Error: ${res.status}`);
-  //     }
-  //     const data = await res.json();
-  //     setMermaidCode(data.mermaid || "");
-  //     setActiveTab("flowchart");
-  //   } catch (err) {   setError(`Failed to fetch flowchart: ${err.message}.`);
-  //   } finally {
-  //       setIsLoading(false);
-  //   }
-  // }, [code]);
+  // Handler functions for variable hover ---
+  const handleVariableHover = (variableName) => {
+    setHoveredVariable(variableName);
+  };
+  const handleVariableLeave = () => {
+    setHoveredVariable(null);
+  };
 
   useEffect(() => {
     let interval;
     if (isPlaying && currentStep < trace.length - 1) {
       interval = setInterval(
         () => setCurrentStep((prev) => prev + 1),
-        1600 - speed
+        2100 - speed
       );
     } else if (currentStep === trace.length - 1 && trace.length > 0) {
       setIsPlaying(false);
-      if (output) {
+      if (output && !runtimeError) {
         setTimeout(() => {
           setFinalOutputToShow(output);
         }, 1000);
       }
     }
     return () => clearInterval(interval);
-  }, [isPlaying, currentStep, trace.length, speed, output]);
+  }, [isPlaying, currentStep, trace.length, speed, output, runtimeError]);
 
   useEffect(() => {
-    const editor = editorRef.current;
-    if (!editor || !monacoRef.current) return;
+     const editor = editorRef.current;
+     if (!editor || !monacoRef.current || trace.length === 0) return;
 
-    const currentLine = trace[currentStep]?.line;
-    const isError = !!trace[currentStep]?.error;
+    const currentEvent = trace[currentStep]?.event;
+    const prevEvent = trace[currentStep - 1]?.event;
+    const currentStepData = trace[currentStep];
+    const currentLine = currentStepData?.line;
+    const isError = currentEvent?.type === "error";
 
-    // The key is to create a new array of decorations for the current line
+   
+    // --- Logic for Editor Line Highlighting ---
     const newDecorations = currentLine
       ? [
           {
             range: new monacoRef.current.Range(currentLine, 1, currentLine, 1),
             options: {
               isWholeLine: true,
-              // Apply the correct CSS class
               className: isError ? "highlight-error" : "highlight-line",
             },
           },
         ]
       : [];
-
-    // Use deltaDecorations to replace the old decorations with the new ones.
-    // It returns the new IDs, which we store in our ref.
     decorationIds.current = editor.deltaDecorations(
       decorationIds.current,
       newDecorations
     );
-
-    // Ensure the highlighted line is visible
     if (currentLine) {
       editor.revealLineInCenter(currentLine);
     }
-  }, [currentStep, trace]);
 
-  // useEffect(() => {
-  //   if (window.mermaid) {
-  //       window.mermaid.initialize({ startOnLoad: false, theme: 'dark', securityLevel: 'loose' });
-  //   }
-  //   if (mermaidCode && activeTab === "flowchart" && mermaidContainerRef.current) {
-  //       mermaidContainerRef.current.innerHTML = "";
-  //       window.mermaid.render('mermaid-svg-1', mermaidCode).then(({ svg }) => {
-  //           mermaidContainerRef.current.innerHTML = svg;
-  //       });
-  //   }
-  // }, [mermaidCode, activeTab]);
+    // --- Logic for Runtime Errors ---
+    if (isError) {
+      setIsPlaying(false);
+      setRuntimeError(currentEvent);
+    }
 
-  // useEffect(() => {
-  //   if (activeTab !== 'flowchart' || !mermaidCode || !trace.length) return;
-  //   const svg = mermaidContainerRef.current?.querySelector('svg');
-  //   if (!svg) return;
-  //   svg.querySelectorAll('.node, .edge-path').forEach(el => {
-  //     el.style.stroke = '';
-  //     el.style.strokeWidth = '';
-  //     el.style.fillOpacity = '1';
-  //   });
-  //   const allNodes = svg.querySelectorAll('.node');
-  //   allNodes.forEach(node => node.style.fillOpacity = '0.5');
-  //   const currentLine = trace[currentStep]?.line;
-  //   if (currentLine) {
-  //       const activeNode = svg.querySelector(`[id$="_L${currentLine}"]`);
-  //       if (activeNode) {
-  //           activeNode.style.stroke = '#2dd4bf';
-  //           activeNode.style.strokeWidth = '3px';
-  //           activeNode.style.fillOpacity = '1';
-  //       }
-  //   }
-  // }, [currentStep, trace, activeTab, mermaidCode]);
+    //  Logic for the Call Bridge Animation ---
+    if (currentEvent?.type === 'call') {
+      const editorContainer = editor.getDomNode();
+      if (!editorContainer) return;
+      
+      const sourceLine = currentStepData.line;
+      const editorRect = editorContainer.getBoundingClientRect();
+      const startTop = editor.getTopForLineNumber(sourceLine);
+      const lineHeight = editor.getOption(monacoRef.current.editor.EditorOption.lineHeight);
+      
+      const nextStepStack = trace[currentStep + 1]?.stack;
+      if (nextStepStack?.length > 0) {
+          const newFrameName = nextStepStack[nextStepStack.length - 1];
+          const newFrameKey = `${newFrameName}-${nextStepStack.length}`;
+          const targetElement = callStackFrameRefs.current.get(newFrameKey);
+          
+          if (targetElement) {
+              const endRect = targetElement.getBoundingClientRect();
 
-  useEffect(() => {
-    const currentEvent = trace[currentStep]?.event;
-    const prevEvent = trace[currentStep - 1]?.event;
+              // LOGIC FOR ARGUMENT PASSING ANIMATION ---
+              const newPackets = [];
+              // Loop through the arguments provided by the backend 'call' event
+              for (const [argName, argValue] of Object.entries(currentEvent.arguments)) {
+                newPackets.push({
+                  id: `arg-${argName}-${currentStep}`,
+                  value: String(argValue.value), // Get the primitive value
+                  // Start from the middle of the calling line in the editor
+                  from: {
+                    x: editorRect.left + editorRect.width / 2,
+                    y: editorRect.top + startTop + lineHeight / 2,
+                  },
+                  // End at the top of the new stack frame
+                  to: {
+                    x: endRect.left + endRect.width / 2,
+                    y: endRect.top + 20, // Small offset from the top
+                  },
+                });
+              }
+              // Set the state to trigger the animation
+              setDataPackets(newPackets);
+              // --- END OF NEW LOGIC ---
+
+              // --- Existing Call Bridge Logic ---
+              const startPosition = {
+                  top: editorRect.top + startTop,
+                  left: editorRect.left + 20,
+                  width: editorRect.width - 40,
+                  height: lineHeight,
+              };
+              setCallBridge({ start: startPosition, end: endRect });
+              setTimeout(() => setCallBridge(null), 800);
+          }
+      }
+    }
 
     if (!editorRef.current) return;
     const editorContainer = editorRef.current.getDomNode();
@@ -238,6 +231,15 @@ print("Factorial of", num, "is:", factorial(num))
       }
     } else {
       setLoopArrow(null);
+    }
+
+    if (
+      currentEvent &&
+      typeof currentEvent === "object" &&
+      currentEvent.type === "error"
+    ) {
+      setIsPlaying(false); // Stop playback immediately
+      setRuntimeError(currentEvent); // Set the error state to show a modal
     }
 
     if (
@@ -291,8 +293,96 @@ print("Factorial of", num, "is:", factorial(num))
         };
         setTimeout(() => setDataPackets([resultPacket]), 100);
       }
+
+      
+      if (
+        currentEvent &&
+        typeof currentEvent === "object" &&
+        currentEvent.type === "return_value"
+      ) {
+        const editor = editorRef.current;
+        const editorContainer = editor?.getDomNode();
+        if (!editorContainer) return;
+
+        // 1. Get START position: The stack frame that is returning.
+        // The returning frame is the last one on the *current* step's stack.
+        const stack = currentStepData.stack;
+        if (stack && stack.length > 0) {
+          const returningFrameName = stack[stack.length - 1];
+          const frameKey = `${returningFrameName}-${stack.length}`;
+          const startElement = callStackFrameRefs.current.get(frameKey);
+
+          if (startElement) {
+            const startRect = startElement.getBoundingClientRect();
+
+            // 2. Get END position: The line of code in the parent that will use the value.
+            // The backend conveniently provides the caller's line number in the *next* step.
+            const nextStepData = trace[currentStep + 1];
+            if (nextStepData) {
+              const targetLine = nextStepData.line;
+              const editorRect = editorContainer.getBoundingClientRect();
+              const top = editor.getTopForLineNumber(targetLine);
+              const lineHeight = editor.getOption(
+              monacoRef.current.editor.EditorOption.lineHeight
+              );
+
+              // 3. Set the data packet state to trigger the animation
+              const returnValuePacket = {
+                id: `return-${currentStep}`,
+                value: String(currentEvent.value.value), // Assuming primitive value
+                from: {
+                  x: startRect.left + startRect.width / 2,
+                  y: startRect.top + startRect.height / 2,
+                },
+                to: {
+                  x: editorRect.left + 40, // Position it over the line number
+                  y: editorRect.top + top + lineHeight / 2,
+                },
+              };
+              setDataPackets([returnValuePacket]);
+            }
+          }
+        }
+
+      }
     }
   }, [currentStep, trace]);
+
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor || !monacoRef.current) return;
+
+    if (hoveredVariable) {
+      const model = editor.getModel();
+      if (!model) return;
+      // Find all occurrences of the hovered variable name
+      const matches = model.findMatches(
+        hoveredVariable,
+        true,
+        false,
+        true,
+        null,
+        true
+      );
+
+      const newDecorations = matches.map((match) => ({
+        range: match.range,
+        options: { className: "highlight-variable", stickiness: 1 },
+      }));
+
+      // Apply the decorations and store their IDs
+      variableHighlightIds.current = editor.deltaDecorations(
+        variableHighlightIds.current,
+        newDecorations
+      );
+    } else {
+      // If nothing is hovered, clear the decorations
+      variableHighlightIds.current = editor.deltaDecorations(
+        variableHighlightIds.current,
+        []
+      );
+    }
+  }, [hoveredVariable]);
 
   const prevTraceStep = trace[currentStep - 1];
   const currentTraceStep = trace[currentStep];
@@ -314,32 +404,28 @@ print("Factorial of", num, "is:", factorial(num))
     }
   }
 
-
   return (
     <div className="flex flex-col h-screen bg-[#0f172a] text-[#f1f5f9] font-sans ">
       <Navbar />
 
-      <div className="flex flex-col flex-grow  gap-2 min-h-0">
+      <div className="flex flex-col flex-grow gap-2 min-h-0">
         <div className="flex-grow min-h-0">
           <PanelGroup direction="horizontal" className="h-full">
-            {/* --- Left Panel: Code Editor --- */}
             <Panel defaultSize={50} minSize={25}>
-               <EditorPanel 
-                        code={code}
-                        setCode={setCode}
-                        onRun={handleRun}
-                        // Pass other handlers like onFlowchart if needed
-                        isLoading={isLoading}
-                        editorRef={editorRef}
-                        monacoRef={monacoRef}
-                    />
+              <EditorPanel
+                code={code}
+                setCode={setCode}
+                onRun={handleRun}
+                isLoading={isLoading}
+                editorRef={editorRef}
+                monacoRef={monacoRef}
+              />
             </Panel>
 
             <PanelResizeHandle className="w-2 bg-[#0f172a] hover:bg-[#6366f1]/50 transition-colors flex items-center justify-center">
               <div className="w-1 h-10 bg-[#334155] rounded-full"></div>
             </PanelResizeHandle>
 
-            {/* --- Right Panel: Visualization & State Inspector --- */}
             <Panel defaultSize={50} minSize={30}>
               <div className="h-full w-full flex flex-col gap-4 bg-[#1e293b]">
                 <div className="flex-1 flex flex-col gap-2 min-h-0">
@@ -354,7 +440,6 @@ print("Factorial of", num, "is:", factorial(num))
                     >
                       Trace
                     </button>
-                    {/* <button onClick={() => setActiveTab('flowchart')} className={`px-4 py-2 font-semibold transition-colors ${activeTab === 'flowchart' ? 'border-b-2 border-blue-500 text-white' : 'text-gray-400'}`}>Flowchart</button> */}
                     <button
                       onClick={() => setActiveTab("output")}
                       className={`px-4 py-2 font-semibold transition-colors ${
@@ -385,8 +470,8 @@ print("Factorial of", num, "is:", factorial(num))
                           <TraceLayout
                             trace={trace}
                             currentStep={currentStep}
+                            setCurrentStep={setCurrentStep} // Pass setCurrentStep for the scrubber
                             callTree={callTree}
-                            // onFlowchart={handleFlowchart}
                             isPlaying={isPlaying}
                             onPlay={() => setIsPlaying(true)}
                             onPause={() => setIsPlaying(false)}
@@ -400,28 +485,18 @@ print("Factorial of", num, "is:", factorial(num))
                             }
                             onReset={() => {
                               setIsPlaying(false);
-                              setCurrentStep(0); /* ... other resets */
+                              setCurrentStep(0);
                             }}
                             onSpeedChange={setSpeed}
                             speed={speed}
                             isLoading={isLoading}
+                            // --- NEW: Pass the refs map down ---
+                            callStackFrameRefs={callStackFrameRefs}
+                            onVariableHover={handleVariableHover}
+                            onVariableLeave={handleVariableLeave}
                           />
                         )}
-                        {/* {activeTab === "flowchart" && (
-                          <div
-                            ref={mermaidContainerRef}
-                            className="p-4 rounded bg-gray-900 min-h-full flex items-center justify-center overflow-auto"
-                          >
-                            {!mermaidCode && !isLoading && (
-                              <p className="text-gray-500">
-                                Click "Generate Flowchart" to see the diagram.
-                              </p>
-                            )}{" "}
-                            {isLoading && (
-                              <p className="text-gray-400">Generating...</p>
-                            )}
-                          </div>
-                        )} */}
+
                         {activeTab === "output" && (
                           <pre className="bg-gray-900 p-4 rounded-lg whitespace-pre-wrap h-full">
                             {output || "No output produced."}
@@ -492,6 +567,63 @@ print("Factorial of", num, "is:", factorial(num))
             {packet.value}
           </motion.div>
         ))}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {runtimeError && (
+          // --- MODIFIED: Backdrop with Blur Effect ---
+          <motion.div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            {/* --- MODIFIED: Modal with improved styling --- */}
+            <motion.div
+              className="relative bg-slate-800 border border-slate-700/50 rounded-xl shadow-2xl w-full max-w-lg"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            >
+              <div className="p-8">
+                {/* --- MODIFIED: Title with Icon --- */}
+                <div className="flex items-center gap-4 mb-4">
+                  <AlertTriangle size={32} className="text-red-500" />
+                  <h2 className="text-2xl font-bold text-red-400">
+                    Runtime Error
+                  </h2>
+                </div>
+
+                {/* --- MODIFIED: More distinct styling for error message --- */}
+                <div className="bg-slate-900/50 border border-slate-700 p-4 rounded-lg mt-4">
+                  <p className="text-lg font-semibold text-slate-200">
+                    {runtimeError.error_type}
+                  </p>
+                  <pre className="mt-2 whitespace-pre-wrap text-slate-300 font-mono text-sm">
+                    {runtimeError.error_message}
+                  </pre>
+                </div>
+
+                <p className="mt-4 text-sm text-slate-400">
+                  Execution stopped at line {trace[currentStep]?.line}.
+                </p>
+              </div>
+
+              {/* --- Option B: Styled Footer Button (uncomment to use) --- */}
+              <div className="flex justify-end gap-4 p-4 bg-slate-900/50 rounded-b-xl border-t border-slate-700/50">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setRuntimeError(null)}
+                  className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold"
+                >
+                  Close
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
       </AnimatePresence>
     </div>
   );
