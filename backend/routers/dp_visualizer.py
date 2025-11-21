@@ -2,11 +2,11 @@ from typing import Dict, Any
 from fastapi import APIRouter
 
 # Import models
-from models.dp_models import LCSRequest, KnapsackRequest, CoinChangeRequest
+from ..models.dp_models import LCSRequest, KnapsackRequest, CoinChangeRequest
 # Import ALL tracers
-from tracers.lcs_tracer import trace_lcs_bottom_up, trace_lcs_top_down
-from tracers.knapsack_tracer import trace_knapsack_bottom_up, trace_knapsack_top_down
-from tracers.coin_change_tracer import trace_coin_change_bottom_up, trace_coin_change_top_down
+from ..tracers.lcs_tracer import trace_lcs_bottom_up, trace_lcs_top_down
+from ..tracers.knapsack_tracer import trace_knapsack_bottom_up, trace_knapsack_top_down
+from ..tracers.coin_change_tracer import trace_coin_change_bottom_up, trace_coin_change_top_down
 
 router = APIRouter()
 

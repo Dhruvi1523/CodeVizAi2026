@@ -1,7 +1,7 @@
 import timeit
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from routers import flowchart, dp_visualizer, tracer
+from .routers import flowchart, dp_visualizer, ai_router,tracer_router
 from pydantic import BaseModel
 import ast
 from memory_profiler import memory_usage
@@ -21,8 +21,9 @@ app.add_middleware(
 
 app.include_router(flowchart.router, tags=["Flowchart Generator"])
 app.include_router(dp_visualizer.router, prefix="/api", tags=["DP Visualizer"])
-app.include_router(tracer.router, tags=["Trace Code"])
+app.include_router(tracer_router.router, tags=["Trace Code"])
 # app.include_router(complexity_analyzer.router, tags=["Complexity Analyzer"])
+app.include_router(ai_router.router, tags=["AI Explanation"])
 
 @app.get("/")
 def read_root():

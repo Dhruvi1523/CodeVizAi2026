@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from pyflowchart import Flowchart
-from models.flowchart_models import CodeInput
+from ..models.flowchart_models import CodeInput
 
 router = APIRouter()
 

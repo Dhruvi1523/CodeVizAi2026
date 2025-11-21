@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
-from models.code_models import CodeInput
-from tracer import run_with_trace
-from tracer import generate_simple_flowchart
+from ..models.code_models import CodeInput
+from ..tracer_core import run_with_trace
+from ..tracer_core import generate_simple_flowchart
 
 router = APIRouter()
 
@@ -32,3 +32,4 @@ async def create_flowchart(payload: CodeInput):
         return {"mermaid": mermaid_code}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to generate flowchart: {str(e)}")
+        

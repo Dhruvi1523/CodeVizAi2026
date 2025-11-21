@@ -1,13 +1,13 @@
 // src/pages/CodePage.jsx
 
-import React, { useState, useRef, useEffect, useCallback, act } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import Navbar from "../components/Navbar";
 import TraceLayout from "../components/TraceLayout";
 import EditorPanel from "../components/EditorPanel";
 import ComplexityTab from "../components/ComplexityTab";
-import { AlertTriangle, X } from "lucide-react";
+import { AlertTriangle, X, ClipboardCopy } from "lucide-react";
 
 const CodePage = () => {
   const [code, setCode] = useState(
@@ -32,7 +32,7 @@ print("Factorial of", num, "is:", factorial(num))
   const [output, setOutput] = useState("");
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("trace");
-  const [mermaidCode, setMermaidCode] = useState("");
+  // const [mermaidCode, setMermaidCode] = useState("");
   const editorRef = useRef(null);
   const monacoRef = useRef(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -44,32 +44,13 @@ print("Factorial of", num, "is:", factorial(num))
   const mermaidContainerRef = useRef(null);
   const [finalOutputToShow, setFinalOutputToShow] = useState(null);
   const decorationIds = useRef([]);
-  const [runtimeError , setRuntimeError] = useState(null);
-    const [callBridge, setCallBridge] = useState(null);
-  const callStackFrameRefs = useRef(new Map()); // To store refs to stack frames
+  const [runtimeError, setRuntimeError] = useState(null);
+  const [callBridge, setCallBridge] = useState(null);
+  const callStackFrameRefs = useRef(new Map());
   const [hoveredVariable, setHoveredVariable] = useState(null);
   const variableHighlightIds = useRef([]);
-
-
-  // useEffect(() => {
-  //   if (window.mermaid) {
-  //       window.mermaid.initialize({ startOnLoad: false, theme: 'dark', securityLevel: 'loose' });
-  //       return;
-  //   }
-  //   const script = document.createElement('script');
-  //   script.src = 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js';
-  //   script.onload = () => {
-  //     if (window.mermaid) {
-  //       window.mermaid.initialize({ startOnLoad: false, theme: 'dark', securityLevel: 'loose' });
-  //     }
-  //   };
-  //   document.body.appendChild(script);
-  //   return () => {
-  //     if (document.body.contains(script)) {
-  //       document.body.removeChild(script);
-  //     }
-  //   };
-  // }, []);
+  const [fullExplanation, setFullExplanation] = useState(null);
+  const [isExplaining, setIsExplaining] = useState(false);
 
   const handleRun = async () => {
     setIsLoading(true);
@@ -85,6 +66,7 @@ print("Factorial of", num, "is:", factorial(num))
     setFinalOutputToShow(null);
     setRuntimeError(null);
     callStackFrameRefs.current.clear();
+    setFullExplanation(null);
     try {
       const res = await fetch("http://127.0.0.1:8000/trace", {
         method: "POST",
@@ -101,6 +83,7 @@ print("Factorial of", num, "is:", factorial(num))
       setTrace(data.trace || []);
       setOutput(data.output || "");
       setCallTree(data.call_tree || null);
+
     } catch (err) {
       setError(
         `Failed to fetch trace: ${err.message}. Is the backend server running?`
@@ -118,12 +101,53 @@ print("Factorial of", num, "is:", factorial(num))
     setHoveredVariable(null);
   };
 
+  const fetchFullExplanation = useCallback(async () => {
+    if (fullExplanation || isExplaining) return; // Don't fetch if already have it or loading
+
+    setIsExplaining(true);
+    try {
+      const res = await fetch("http://127.0.0.1:8000/ai/explain_full", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: code }),
+      });
+
+      if (!res.ok) throw new Error("Failed to fetch AI explanation");
+
+      const data = await res.json();
+      if (data.full_explanation) {
+        setFullExplanation(data.full_explanation);
+      } else {
+        setFullExplanation("⚠️ No explanation returned from API.");
+      }
+    } catch (e) {
+      setFullExplanation(
+        `❌ Error: ${e.message}. Ensure backend is running and API Key is set.`
+      );
+    } finally {
+      setIsExplaining(false);
+    }
+  }, [code, fullExplanation, isExplaining]);
+
   useEffect(() => {
+    if (activeTab === "explain" && !fullExplanation) {
+      fetchFullExplanation();
+    }
+  }, [activeTab, fullExplanation, fetchFullExplanation]);
+
+  useEffect(() => {
+    const isReturnStep = trace[currentStep]?.event?.type === "return_value";
+    const calculatedDelay = isPlaying
+      ? isReturnStep
+        ? 1500
+        : 2100 - speed
+      : null;
+
     let interval;
-    if (isPlaying && currentStep < trace.length - 1) {
+    if (isPlaying && currentStep < trace.length - 1 && calculatedDelay) {
       interval = setInterval(
         () => setCurrentStep((prev) => prev + 1),
-        2100 - speed
+        calculatedDelay
       );
     } else if (currentStep === trace.length - 1 && trace.length > 0) {
       setIsPlaying(false);
@@ -134,11 +158,19 @@ print("Factorial of", num, "is:", factorial(num))
       }
     }
     return () => clearInterval(interval);
-  }, [isPlaying, currentStep, trace.length, speed, output, runtimeError]);
+  }, [
+    isPlaying,
+    currentStep,
+    trace.length,
+    speed,
+    output,
+    runtimeError,
+    trace,
+  ]);
 
   useEffect(() => {
-     const editor = editorRef.current;
-     if (!editor || !monacoRef.current || trace.length === 0) return;
+    const editor = editorRef.current;
+    if (!editor || !monacoRef.current || trace.length === 0) return;
 
     const currentEvent = trace[currentStep]?.event;
     const prevEvent = trace[currentStep - 1]?.event;
@@ -146,7 +178,6 @@ print("Factorial of", num, "is:", factorial(num))
     const currentLine = currentStepData?.line;
     const isError = currentEvent?.type === "error";
 
-   
     // --- Logic for Editor Line Highlighting ---
     const newDecorations = currentLine
       ? [
@@ -166,7 +197,9 @@ print("Factorial of", num, "is:", factorial(num))
     if (currentLine) {
       editor.revealLineInCenter(currentLine);
     }
-
+    if (editor && monacoRef.current && activeTab === "trace") {
+      editor.layout();
+    }
     // --- Logic for Runtime Errors ---
     if (isError) {
       setIsPlaying(false);
@@ -174,57 +207,61 @@ print("Factorial of", num, "is:", factorial(num))
     }
 
     //  Logic for the Call Bridge Animation ---
-    if (currentEvent?.type === 'call') {
+    if (currentEvent?.type === "call") {
       const editorContainer = editor.getDomNode();
       if (!editorContainer) return;
-      
+
       const sourceLine = currentStepData.line;
       const editorRect = editorContainer.getBoundingClientRect();
       const startTop = editor.getTopForLineNumber(sourceLine);
-      const lineHeight = editor.getOption(monacoRef.current.editor.EditorOption.lineHeight);
-      
+      const lineHeight = editor.getOption(
+        monacoRef.current.editor.EditorOption.lineHeight
+      );
+
       const nextStepStack = trace[currentStep + 1]?.stack;
       if (nextStepStack?.length > 0) {
-          const newFrameName = nextStepStack[nextStepStack.length - 1];
-          const newFrameKey = `${newFrameName}-${nextStepStack.length}`;
-          const targetElement = callStackFrameRefs.current.get(newFrameKey);
-          
-          if (targetElement) {
-              const endRect = targetElement.getBoundingClientRect();
+        const newFrameName = nextStepStack[nextStepStack.length - 1];
+        const newFrameKey = `${newFrameName}-${nextStepStack.length}`;
+        const targetElement = callStackFrameRefs.current.get(newFrameKey);
 
-              // LOGIC FOR ARGUMENT PASSING ANIMATION ---
-              const newPackets = [];
-              // Loop through the arguments provided by the backend 'call' event
-              for (const [argName, argValue] of Object.entries(currentEvent.arguments)) {
-                newPackets.push({
-                  id: `arg-${argName}-${currentStep}`,
-                  value: String(argValue.value), // Get the primitive value
-                  // Start from the middle of the calling line in the editor
-                  from: {
-                    x: editorRect.left + editorRect.width / 2,
-                    y: editorRect.top + startTop + lineHeight / 2,
-                  },
-                  // End at the top of the new stack frame
-                  to: {
-                    x: endRect.left + endRect.width / 2,
-                    y: endRect.top + 20, // Small offset from the top
-                  },
-                });
-              }
-              // Set the state to trigger the animation
-              setDataPackets(newPackets);
-              // --- END OF NEW LOGIC ---
+        if (targetElement) {
+          const endRect = targetElement.getBoundingClientRect();
 
-              // --- Existing Call Bridge Logic ---
-              const startPosition = {
-                  top: editorRect.top + startTop,
-                  left: editorRect.left + 20,
-                  width: editorRect.width - 40,
-                  height: lineHeight,
-              };
-              setCallBridge({ start: startPosition, end: endRect });
-              setTimeout(() => setCallBridge(null), 800);
+          // LOGIC FOR ARGUMENT PASSING ANIMATION ---
+          const newPackets = [];
+          // Loop through the arguments provided by the backend 'call' event
+          for (const [argName, argValue] of Object.entries(
+            currentEvent.arguments
+          )) {
+            newPackets.push({
+              id: `arg-${argName}-${currentStep}`,
+              value: String(argValue.value), // Get the primitive value
+              // Start from the middle of the calling line in the editor
+              from: {
+                x: editorRect.left + editorRect.width / 2,
+                y: editorRect.top + startTop + lineHeight / 2,
+              },
+              // End at the top of the new stack frame
+              to: {
+                x: endRect.left + endRect.width / 2,
+                y: endRect.top + 20, // Small offset from the top
+              },
+            });
           }
+          // Set the state to trigger the animation
+          setDataPackets(newPackets);
+          // --- END OF NEW LOGIC ---
+
+          // --- Existing Call Bridge Logic ---
+          const startPosition = {
+            top: editorRect.top + startTop,
+            left: editorRect.left + 20,
+            width: editorRect.width - 40,
+            height: lineHeight,
+          };
+          setCallBridge({ start: startPosition, end: endRect });
+          setTimeout(() => setCallBridge(null), 800);
+        }
       }
     }
 
@@ -316,7 +353,6 @@ print("Factorial of", num, "is:", factorial(num))
         setTimeout(() => setDataPackets([resultPacket]), 100);
       }
 
-      
       if (
         currentEvent &&
         typeof currentEvent === "object" &&
@@ -345,7 +381,7 @@ print("Factorial of", num, "is:", factorial(num))
               const editorRect = editorContainer.getBoundingClientRect();
               const top = editor.getTopForLineNumber(targetLine);
               const lineHeight = editor.getOption(
-              monacoRef.current.editor.EditorOption.lineHeight
+                monacoRef.current.editor.EditorOption.lineHeight
               );
 
               // 3. Set the data packet state to trigger the animation
@@ -360,15 +396,15 @@ print("Factorial of", num, "is:", factorial(num))
                   x: editorRect.left + 40, // Position it over the line number
                   y: editorRect.top + top + lineHeight / 2,
                 },
+                type: "return_value",
               };
               setDataPackets([returnValuePacket]);
             }
           }
         }
-
       }
     }
-  }, [currentStep, trace]);
+  }, [currentStep, trace, activeTab]);
 
   useEffect(() => {
     const editor = editorRef.current;
@@ -426,6 +462,13 @@ print("Factorial of", num, "is:", factorial(num))
     }
   }
 
+ const handleCopyExplanation = () => {
+    if (!fullExplanation) return;
+    navigator.clipboard.writeText(fullExplanation);
+    alert("Explanation copied!");
+  };
+ 
+
   return (
     <div className="flex flex-col h-screen bg-[#0f172a] text-[#f1f5f9] font-sans ">
       <Navbar />
@@ -439,14 +482,6 @@ print("Factorial of", num, "is:", factorial(num))
                 setCode={setCode}
                 onRun={handleRun}
                 // Pass other handlers like onFlowchart if needed
-                isLoading={isLoading}
-                editorRef={editorRef}
-                monacoRef={monacoRef}
-              />
-              <EditorPanel
-                code={code}
-                setCode={setCode}
-                onRun={handleRun}
                 isLoading={isLoading}
                 editorRef={editorRef}
                 monacoRef={monacoRef}
@@ -490,6 +525,16 @@ print("Factorial of", num, "is:", factorial(num))
                       }`}
                     >
                       Complexity
+                    </button>
+                    <button
+                      onClick={() => setActiveTab("explain")}
+                      className={`px-4 py-2 font-semibold transition-colors ${
+                        activeTab === "explain"
+                          ? "border-b-2 border-green-500 text-white"
+                          : "text-gray-400"
+                      }`}
+                    >
+                      Explaination
                     </button>
                   </div>
                   <div className="flex-grow bg-[#1e293b] rounded-lg border border-[#334155] m-4 min-h-0 ">
@@ -544,10 +589,42 @@ print("Factorial of", num, "is:", factorial(num))
                           </pre>
                         )}
                         {activeTab === "complexity" && (
-                          <ComplexityTab
-                            code={code}
-                           
-                          />
+                          <ComplexityTab code={code} />
+                        )}
+                        {activeTab === "explain" && (
+                          <div className="h-full bg-slate-900/50 p-6 rounded-lg border border-slate-700 flex flex-col">
+                            <div className="flex items-center justify-between mb-4">
+                              <h3 className="text-xl font-bold text-green-400">
+                                Full Code Analysis
+                              </h3>
+                              <button
+                                onClick={handleCopyExplanation}
+                                disabled={isExplaining || !fullExplanation}
+                                className="text-slate-400 hover:text-green-400 disabled:opacity-50 transition-colors"
+                                title="Copy Explanation"
+                              >
+                                <ClipboardCopy size={20} />
+                              </button>
+                            </div>
+
+                            <div className="flex-grow overflow-y-auto pr-2 custom-scrollbar">
+                              {isExplaining ? (
+                                <div className="flex flex-col items-center justify-center h-full text-indigo-400 animate-pulse">
+                                  <p className="text-lg">
+                                    🧠 Generating comprehensive analysis...
+                                  </p>
+                                  <p className="text-sm text-slate-500 mt-2">
+                                    This may take a few seconds.
+                                  </p>
+                                </div>
+                              ) : (
+                                <pre className="whitespace-pre-wrap font-sans text-slate-200 leading-relaxed">
+                                  {fullExplanation ||
+                                    "Select this tab to generate an AI explanation of your code."}
+                                </pre>
+                              )}
+                            </div>
+                          </div>
                         )}
                       </motion.div>
                     </AnimatePresence>
