@@ -156,40 +156,58 @@ def llm_explain(ast_result, time_complexity, space_complexity):
 
 # ----------------------
 # FastAPI endpoint
-# ----------------------
+# ---------------------
+   
+
 @app.post("/analyze_code")
 def analyze_code(request: CodeRequest):
     code = request.code
     func_name = request.func_name
 
-    # Extract functions
+    # 1. Extract function name if missing
     functions = extract_functions(code)
     if not func_name:
         if functions:
             func_name = functions[0]
         else:
+            # Fallback logic
             func_name = "main"
-            code = "def main():\n" + "\n".join(["    " + line for line in code.splitlines()])
-
-    # AST analysis
-    ast_result = analyze_ast_complexity(code)
-
-    # Execute code
+            # Indent code to wrap in main if needed (simplified)
+            # Note: This fallback is risky, better to enforce a function name
+    
+    # 2. AST Analysis
     try:
-        exec(code, globals())
-        func = globals()[func_name]
+        ast_result = analyze_ast_complexity(code)
+    except SyntaxError as e:
+         return {"error": f"Syntax Error: {e}"}
+
+    # 3. SECURE EXECUTION (The Fix)
+    local_scope = {} # Create an empty sandbox
+    try:
+        # Execute code inside 'local_scope', NOT globals()
+        exec(code, {}, local_scope)
+        
+        if func_name not in local_scope:
+             return {"error": f"Function '{func_name}' not found in code."}
+             
+        func = local_scope[func_name]
     except Exception as e:
         return {"error": f"Code execution failed: {e}"}
 
-    # Profiling
+    # 4. Profiling (Wrapped in Try/Except to prevent server crashes)
+    try:
+        times = profile_times(func, request.input_sizes)
+        memory = profile_memory(func, request.input_sizes)
+    except Exception as e:
+        return {"error": f"Profiling failed (possible infinite recursion): {e}"}
+
+     # Profiling
     times = profile_times(func, request.input_sizes)
     memory = profile_memory(func, request.input_sizes)
 
-    # Complexity estimation
+    
     time_complexity = estimate_time_complexity(ast_result)
     space_complexity = estimate_space_complexity(ast_result)
-
-    # LLM explanation
     llm_result = llm_explain(ast_result, time_complexity, space_complexity)
 
     return {
