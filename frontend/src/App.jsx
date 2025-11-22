@@ -24,6 +24,7 @@ import GeneralTree from "./pages/dsa/GeneralTree.jsx";
 import BTree from "./pages/dsa/BTree.jsx";
 import BPlusTree from "./pages/dsa/BPlusTree.jsx";
 import DynamicProgramingPage from "./pages/dsa/DynamicProgramingPage.jsx";
+import HeapVisualizer from './components/visualizers/HeapVisualizer';
 
 // 📊 DP Components
 import DpVisualizationPage from "./components/dp/DpVisualizationPage.jsx";
@@ -55,6 +56,7 @@ function App() {
         <Route path="/stack" element={<StackPage />} />
         <Route path="/queue" element={<QueuePage />} />
         <Route path="/linked-list" element={<LinkedListPage />} />
+        <Route path="/heap" element={<HeapVisualizer />} />
 
         {/* 🧮 Array Algorithms */}
         <Route path="/array" element={<AlgorithmSelector />} />
