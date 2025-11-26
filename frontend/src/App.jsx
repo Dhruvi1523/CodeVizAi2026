@@ -27,9 +27,11 @@ import DynamicProgramingPage from "./pages/dsa/DynamicProgramingPage.jsx";
 
 // 📊 DP Components
 import DpVisualizationPage from "./components/dp/DpVisualizationPage.jsx";
+import LCS from "./components/dynamic-programming/LCS.jsx";
 
 // 🔍 Array Algorithm
 import AlgorithmSelector from "./components/Array/AlgorithmSelector.jsx";
+import KnapsackInteractivePage from "./components/dynamic-programming/Knapsack.jsx";
 
 function App() {
   return (
@@ -50,6 +52,8 @@ function App() {
         {/* 📊 Dynamic Programming */}
         <Route path="/dynamic-programming" element={<DynamicProgramingPage />} />
         <Route path="/dynamic-programming/:algoId" element={<DpVisualizationPage />} />
+        <Route path="/dynamic-programming/lcs" element={<LCS />} />
+        {/* <Route path="/dynamic-programming/knapsack" element={<KnapsackInteractivePage/>} /> */}
 
         {/* 🧱 Data Structures */}
         <Route path="/stack" element={<StackPage />} />
