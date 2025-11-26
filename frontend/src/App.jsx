@@ -7,7 +7,7 @@ import TracerPanel from "./j1/TracerTest";
 import CodePage from "./pages/CodePage";
 import ComplexityAnalyzerPage from "./pages/ComplexityAnalyzerPage";
 import DSAVisualizerPage from "./pages/DsaVisualizerPage.jsx";
-import FlowchartGeneratorPage from "./pages/FlowchartGeneratorPage";
+import FlowchartGeneratorPage from "./pages/FlowChartGeneratorPage.jsx";
 
 // 🧮 DSA Pages
 import StackPage from "./pages/dsa/StackPage.jsx";
@@ -31,7 +31,7 @@ import TopologicalSortVisualization from "./pages/dsa/TopologicalSortVisualizati
 import GraphLandingPage from "./pages/dsa/GraphLandingPage.jsx";
 import DijkstraVisualization from "./pages/dsa/DijkstraVisualization.jsx";
 import ConnectedComponents from "./pages/dsa/ConnectedComponents.jsx";
-
+import HashingPage from "./pages/dsa/HashingPage.jsx"
 
 // 📊 DP Components
 import DpVisualizationPage from "./components/dp/DpVisualizationPage.jsx";
@@ -39,7 +39,6 @@ import LCS from "./components/dynamic-programming/LCS.jsx";
 
 // 🔍 Array Algorithm
 import AlgorithmSelector from "./components/Array/AlgorithmSelector.jsx";
-import KnapsackInteractivePage from "./components/dynamic-programming/Knapsack.jsx";
 
 function App() {
   return (
@@ -68,6 +67,7 @@ function App() {
         <Route path="/queue" element={<QueuePage />} />
         <Route path="/linked-list" element={<LinkedListPage />} />
         <Route path="/heap" element={<HeapVisualizer />} />
+        <Route path="/hashing" element={<HashingPage />} />
 
         {/* 🧮 Array Algorithms */}
         <Route path="/array" element={<AlgorithmSelector />} />

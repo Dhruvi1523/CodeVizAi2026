@@ -6,8 +6,7 @@ import { Code, BarChart3, GitBranch, Share2, MessageSquareText } from 'lucide-re
 const navLinks = [
   { to: '/code', icon: <Code size={16} />, label: 'Code Editor' },
   { to: '/dsa-visualizer', icon: <GitBranch size={16} />, label: 'DSA Visualizer' },
-  { to: '/flowchart', icon: <Share2 size={16} />, label: 'Flowchart' },
-  { to: '/explanation', icon: <MessageSquareText size={16} />, label: 'Explanation' },
+  { to: '/flow-chart-generator', icon: <Share2 size={16} />, label: 'Flowchart' },
 ];
 
 export default function Navbar() {

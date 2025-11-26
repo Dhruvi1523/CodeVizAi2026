@@ -22,6 +22,7 @@ export default function ComplexityTab({ code, inputSizes }) {
         });
 
         setResult(response.data);
+        console.log(response.data)
 
         if (response.data.detected_functions.length > 0 && !selectedFunc) {
           setSelectedFunc(response.data.detected_functions[0]);

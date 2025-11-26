@@ -28,26 +28,26 @@ function HomePage() {
               </p>
 
               <div className="py-5 flex flex-col sm:flex-row gap-4 justify-center items-center">
-  {/* Primary Button */}
-  <Link
-    to="/code"
-    className="
+                {/* Primary Button */}
+                <Link
+                  to="/code"
+                  className="
       inline-flex items-center justify-center gap-3 px-6 py-3 
       font-semibold text-[#f1f5f9] bg-[#6366f1] 
       rounded-lg shadow-lg min-w-[220px] 
       transition-transform transform hover:scale-105 
       focus:outline-none focus:ring-2 focus:ring-[#6366f1] focus:ring-offset-2 focus:ring-offset-[#0f172a]
     "
-  >
-    <Play className="h-5 w-5 fill-current" />
-    <span className="leading-none">Start Coding</span>
-    <ArrowRight className="h-5 w-5" />
-  </Link>
+                >
+                  <Play className="h-5 w-5 fill-current" />
+                  <span className="leading-none">Start Coding</span>
+                  <ArrowRight className="h-5 w-5" />
+                </Link>
 
-  {/* Secondary Button */}
-  <Link
-    to="/demo"
-    className="
+                {/* Secondary Button */}
+                <Link
+                  to="/demo"
+                  className="
       inline-flex items-center justify-center px-6 py-3 
       font-semibold text-[#f1f5f9] bg-[#334155] 
       rounded-lg shadow-lg min-w-[220px] 
@@ -55,10 +55,10 @@ function HomePage() {
       border border-[#334155]
       focus:outline-none focus:ring-2 focus:ring-[#6366f1] focus:ring-offset-2 focus:ring-offset-[#0f172a]
     "
-  >
-    View Demo
-  </Link>
-</div>
+                >
+                  View Demo
+                </Link>
+              </div>
             </div>
 
             {/* Stats Section */}

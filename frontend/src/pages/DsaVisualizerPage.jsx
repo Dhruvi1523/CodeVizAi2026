@@ -40,7 +40,7 @@ const features = [
     name: "Graph",
     description: "Representation of interconnected nodes and edges. Visualize BFS, DFS, and shortest path algorithms.",
     icon: Network,
-    path: "/graph",
+    path: "/graph-dsa",
   },
   {
     name: "Heap",

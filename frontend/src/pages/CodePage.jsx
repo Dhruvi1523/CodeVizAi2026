@@ -8,6 +8,7 @@ import TraceLayout from "../components/TraceLayout";
 import EditorPanel from "../components/EditorPanel";
 import ComplexityTab from "../components/ComplexityTab";
 import { AlertTriangle, X, ClipboardCopy } from "lucide-react";
+import Explanation from "../components/ExplanationTab";
 
 const CodePage = () => {
   const [code, setCode] = useState(
@@ -618,10 +619,7 @@ print("Factorial of", num, "is:", factorial(num))
                                   </p>
                                 </div>
                               ) : (
-                                <pre className="whitespace-pre-wrap font-sans text-slate-200 leading-relaxed">
-                                  {fullExplanation ||
-                                    "Select this tab to generate an AI explanation of your code."}
-                                </pre>
+                                <Explanation fullExplanation={fullExplanation} />
                               )}
                             </div>
                           </div>

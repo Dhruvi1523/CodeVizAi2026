@@ -60,6 +60,7 @@ const parseAndStyleFlowchart = (syntax) => {
 
     const lines = syntax.split('\n').filter(line => line.trim() !== '');
 
+    
     // First pass: define nodes
     lines.forEach(line => {
         if (line.includes('=>')) {

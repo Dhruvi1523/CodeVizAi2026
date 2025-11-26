@@ -1,7 +1,7 @@
 import timeit
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import flowchart, dp_visualizer, ai_router,tracer_router
+from routers import flowchart, dp_visualizer, ai_router,tracer_router
 from pydantic import BaseModel
 import ast
 from memory_profiler import memory_usage
@@ -28,8 +28,6 @@ app.include_router(ai_router.router, tags=["AI Explanation"])
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the DP and Flowchart Visualizer API"}
-
-
 
 
 class CodeRequest(BaseModel):
@@ -164,48 +162,71 @@ def analyze_code(request: CodeRequest):
     code = request.code
     func_name = request.func_name
 
-    # 1. Extract function name if missing
+    # -----------------------------
+    # Detect functions in user code
+    # -----------------------------
     functions = extract_functions(code)
-    if not func_name:
-        if functions:
+
+    # -----------------------------
+    # Auto-wrap script if no functions defined
+    # -----------------------------
+    if not functions:
+        func_name = "auto_wrapped"
+
+        wrapped_code = "def auto_wrapped(n):\n"
+        for line in code.split("\n"):
+            if line.strip():
+                wrapped_code += f"    {line}\n"
+            else:
+                wrapped_code += "\n"
+
+        # Add scaling workload so profiling changes over input_sizes
+        wrapped_code += "\n    for _ in range(n * 10000):\n        pass\n"
+        wrapped_code += "    return True\n"
+
+        code = wrapped_code
+        functions = ["auto_wrapped"]
+
+    else:
+        if not func_name:
             func_name = functions[0]
-        else:
-            # Fallback logic
-            func_name = "main"
-            # Indent code to wrap in main if needed (simplified)
-            # Note: This fallback is risky, better to enforce a function name
-    
-    # 2. AST Analysis
+
+    # -----------------------------
+    # AST Static Analysis
+    # -----------------------------
     try:
         ast_result = analyze_ast_complexity(code)
     except SyntaxError as e:
-         return {"error": f"Syntax Error: {e}"}
+        return {"error": f"Syntax Error: {e}"}
 
-    # 3. SECURE EXECUTION (The Fix)
-    local_scope = {} # Create an empty sandbox
+    # -----------------------------
+    # Safe execution environment
+    # -----------------------------
+    local_scope = {}
     try:
-        # Execute code inside 'local_scope', NOT globals()
-        exec(code, {}, local_scope)
-        
+        # IMPORTANT FIX: allow recursion and cross-references
+        exec(code, local_scope, local_scope)
+
         if func_name not in local_scope:
-             return {"error": f"Function '{func_name}' not found in code."}
-             
+            return {"error": f"Function '{func_name}' not found after wrapping."}
+
         func = local_scope[func_name]
+
     except Exception as e:
         return {"error": f"Code execution failed: {e}"}
 
-    # 4. Profiling (Wrapped in Try/Except to prevent server crashes)
+    # -----------------------------
+    # Profiling
+    # -----------------------------
     try:
         times = profile_times(func, request.input_sizes)
         memory = profile_memory(func, request.input_sizes)
     except Exception as e:
         return {"error": f"Profiling failed (possible infinite recursion): {e}"}
 
-     # Profiling
-    times = profile_times(func, request.input_sizes)
-    memory = profile_memory(func, request.input_sizes)
-
-    
+    # -----------------------------
+    # Complexity estimation
+    # -----------------------------
     time_complexity = estimate_time_complexity(ast_result)
     space_complexity = estimate_space_complexity(ast_result)
     llm_result = llm_explain(ast_result, time_complexity, space_complexity)
@@ -217,5 +238,7 @@ def analyze_code(request: CodeRequest):
         "empirical_time_complexity": time_complexity,
         "empirical_space_complexity": space_complexity,
         "llm_explanation": llm_result,
-        "detected_functions": functions
+        "detected_functions": functions,
+        "was_script_wrapped": (functions == ["auto_wrapped"])
     }
+

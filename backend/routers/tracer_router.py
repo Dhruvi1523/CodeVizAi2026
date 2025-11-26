@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
-from ..models.code_models import CodeInput
-from ..tracer_core import run_with_trace
-from ..tracer_core import generate_simple_flowchart
+from models.code_models import CodeInput
+from tracer_core import run_with_trace
+from tracer_core import generate_simple_flowchart
 
 router = APIRouter()
 
