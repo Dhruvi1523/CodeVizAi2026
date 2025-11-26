@@ -24,6 +24,14 @@ import GeneralTree from "./pages/dsa/GeneralTree.jsx";
 import BTree from "./pages/dsa/BTree.jsx";
 import BPlusTree from "./pages/dsa/BPlusTree.jsx";
 import DynamicProgramingPage from "./pages/dsa/DynamicProgramingPage.jsx";
+import HeapVisualizer from './components/visualizers/HeapVisualizer';
+import DFSVisualization from "./pages/dsa/DFSVisualization.jsx";
+import BFSVisualization from "./pages/dsa/BFSVisualization.jsx";
+import TopologicalSortVisualization from "./pages/dsa/TopologicalSortVisualization.jsx";
+import GraphLandingPage from "./pages/dsa/GraphLandingPage.jsx";
+import DijkstraVisualization from "./pages/dsa/DijkstraVisualization.jsx";
+import ConnectedComponents from "./pages/dsa/ConnectedComponents.jsx";
+
 
 // 📊 DP Components
 import DpVisualizationPage from "./components/dp/DpVisualizationPage.jsx";
@@ -59,6 +67,7 @@ function App() {
         <Route path="/stack" element={<StackPage />} />
         <Route path="/queue" element={<QueuePage />} />
         <Route path="/linked-list" element={<LinkedListPage />} />
+        <Route path="/heap" element={<HeapVisualizer />} />
 
         {/* 🧮 Array Algorithms */}
         <Route path="/array" element={<AlgorithmSelector />} />
@@ -74,6 +83,15 @@ function App() {
         <Route path="/tree/general-tree" element={<GeneralTree />} />
         <Route path="/tree/b-tree" element={<BTree />} />
         <Route path="/tree/b-plus-tree" element={<BPlusTree />} />
+
+        {/* 🌐 Graphs */}
+        <Route path="/graph-dsa" element={<GraphLandingPage />} />
+        <Route path="/graph/dfs" element={<DFSVisualization />} />
+        <Route path="/graph/bfs" element={<BFSVisualization />} />
+        <Route path="/graph/topological-sort" element={<TopologicalSortVisualization />} />
+        <Route path="/graph/dijkstra" element={<DijkstraVisualization />} />
+        <Route path="/graph/ConnectedComponents" element={<ConnectedComponents />} />
+        {/* Additional graph routes can be added here */} 
       </Routes>
     </Router>
   );

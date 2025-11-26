@@ -1,9 +1,12 @@
 @import "tailwindcss";
 /* @import "@clerk/themes/shadcn.css"; */
 
-
-/* 3. Define global styles and custom properties in @layer base */
+/* Define global styles and custom properties in @layer base */
 @layer base {
+  :root {
+    /* Define CSS variables here if needed */
+  }
+
   body {
     background-color: #0f172a;
     padding: 0px;
@@ -13,27 +16,6 @@
   /* --- Custom Scrollbar Styling (Cross-browser) --- */
 
   /* For Firefox */
-}
-/* For Monaco Editor line highlighting */
-.highlight-line {
-  background-color: #3b82f633; /* A semi-transparent blue */
-  margin-left: 3px !important; /* Ensures the highlight touches the line numbers */
-}
-.highlight-error {
-  background-color: #ef444440; /* A semi-transparent red */
-  margin-left: 3px !important;
-}
-
-.highlight-variable {
-  background-color: rgba(99, 102, 241, 0.4); /* A semi-transparent indigo */
-  border-radius: 3px;
-}
-
-:root{
- 
-
-@layer base {
-
   * {
     scrollbar-width: thin;
     scrollbar-color: #334155 #1e293b; /* thumb-color track-color */
@@ -42,7 +24,7 @@
   /* For Webkit browsers (Chrome, Safari, Edge, etc.) */
   *::-webkit-scrollbar {
     width: 12px;
-    height: 12px; /* Added for horizontal scrollbars */
+    height: 12px;
   }
 
   *::-webkit-scrollbar-track {
@@ -52,7 +34,7 @@
   *::-webkit-scrollbar-thumb {
     background-color: #334155;
     border-radius: 20px;
-    border: 3px solid #0f172a; /* Creates padding around the thumb */
+    border: 3px solid #0f172a;
   }
 
   *::-webkit-scrollbar-thumb:hover {
@@ -60,26 +42,33 @@
   }
 }
 
-/* 4. Define custom, reusable component-level styles in @layer components */
+/* Define custom, reusable component-level styles in @layer components */
 @layer components {
   /* For Monaco Editor line highlighting */
   .highlight-line {
     background-color: #3b82f633; /* A semi-transparent blue */
-    margin-left: 3px !important; /* Ensures the highlight touches the line numbers */
+    /* Use border instead of margin for a cleaner look that doesn't affect layout */
+    border-left: 3px solid #3b82f6 !important;
   }
   .highlight-error {
     background-color: #ef444440; /* A semi-transparent red */
-    margin-left: 3px !important;
+    border-left: 3px solid #ef4444 !important;
   }
+
+  /* For hovered variable highlighting */
+  .highlight-variable {
+    background-color: rgba(99, 102, 241, 0.4);
+    border-radius: 3px;
+  }
+
   .animate-pulse {
     animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 }
 
-/* 5. Keyframes must be at the top level of the CSS, not nested */
+/* Keyframes must be at the top level of the CSS, not nested */
 @keyframes pulse {
   50% {
-    opacity: .5;
+    opacity: 0.5;
   }
-}
 }
