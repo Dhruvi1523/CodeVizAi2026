@@ -1,64 +1,73 @@
 import React from 'react';
 import { Link } from "react-router-dom";
-import { Layers, Shuffle, List, Binary, TreePine, Box, Network, BrainCircuit } from "lucide-react";
+import {
+  Layers,
+  SquareStack,
+  Shuffle,
+  ListOrdered,
+  TreePine,
+  Share2,
+  Boxes,
+  BrainCircuit,
+  Hash,
+} from "lucide-react";
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 
 const features = [
-   {
+  {
     name: "Array",
-    description: "LIFO data structure supporting push and pop operations. Visualize stack operations and state.",
-    icon: Layers,
+    description: "Linear data structure that stores elements in contiguous memory locations, accessible via indices.",
+    icon: SquareStack,
     path: "/array",
   },
   {
     name: "Stack",
-    description: "LIFO data structure supporting push and pop operations. Visualize stack operations and state.",
+    description: "LIFO (Last In, First Out) structure supporting push and pop operations. Ideal for recursion and backtracking.",
     icon: Layers,
     path: "/stack",
   },
   {
     name: "Queue",
-    description: "FIFO data structure for managing ordered elements. See enqueue and dequeue in action.",
+    description: "FIFO (First In, First Out) structure enabling enqueue and dequeue operations. Useful for scheduling and BFS.",
     icon: Shuffle,
     path: "/queue",
   },
   {
     name: "Linked List",
-    description: "Dynamic data structure with nodes connected through references. Explore different types of linked lists.",
-    icon: List,
+    description: "A sequence of nodes connected through pointers. Supports dynamic memory allocation and efficient insertions/deletions.",
+    icon: ListOrdered,
     path: "/linked-list",
   },
- 
   {
     name: "Tree",
-    description: "Self-balancing BST that maintains height balance. Visualize rotations and balancing.",
+    description: "Hierarchical structure of nodes used for fast searching and sorting. Includes BST, AVL, and Red-Black Trees.",
     icon: TreePine,
     path: "/tree-dsa",
   },
   {
     name: "Graph",
-    description: "Representation of interconnected nodes and edges. Visualize BFS, DFS, and shortest path algorithms.",
-    icon: Network,
+    description: "Collection of nodes connected by edges. Helps visualize traversal algorithms like BFS, DFS, and shortest path.",
+    icon: Share2,
     path: "/graph-dsa",
   },
   {
     name: "Heap",
-    description: "Complete binary tree with heap property. Switch between min and max heaps.",
-    icon: Box,
+    description: "Complete binary tree satisfying the heap property. Supports efficient priority queue operations.",
+    icon: Boxes,
     path: "/heap",
   },
   {
     name: "Dynamic Programming",
-    description: "Optimization technique to solve problems by breaking them into overlapping subproblems.",
+    description: "Optimization technique solving complex problems by breaking them into overlapping subproblems using memoization or tabulation.",
     icon: BrainCircuit,
     path: "/dynamic-programming",
   },
   {
-    name: "Sorting Algorithms",
-    description: "Sorting Algorithms",
-    icon: BrainCircuit,
-    path: "/sorting",
+    name: "Hashing",
+    description: "Technique to map data to fixed-size values for fast lookup using hash functions and hash tables.",
+    icon: Hash,
+    path: "/hashing",
   },
 ];
 
