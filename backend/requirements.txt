@@ -6,7 +6,6 @@ transformers
 accelerate
 torch
 pandas
-numpy
 scipy
 requests
 aiohttp
@@ -14,3 +13,4 @@ memory_profiler
 astunparse
 jinja2
 importlib-metadata
+pyflowchart
