@@ -60,7 +60,7 @@ import QuadraticProbing from './pages/dsa/QuadraticProbing.jsx';
 import DoubleHashing from './pages/dsa/DoubleHashing.jsx';
 
 // 🔍 Array Algorithm
-import AlgorithmSelector from "./components/Array/AlgorithmSelector.jsx";
+import AlgorithmSelector from "./components/array/AlgorithmSelector.jsx";
 
 function App() {
   return (
