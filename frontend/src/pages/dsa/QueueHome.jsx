@@ -76,7 +76,7 @@ export default function QueueHome() {
           className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#1e293b] border border-[#334155] hover:border-[#6366f1] text-[#94a3b8] hover:text-white transition-all shadow-md group"
         >
           <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
-          <span className="font-semibold text-sm">All Data Structures</span>
+          <span className="font-semibold text-sm"></span>
         </Link>
       </div>
 

@@ -257,7 +257,7 @@ export default function SimpleQueueVisualizer() {
           to="/queue" 
           className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#1e293b] border border-[#334155] hover:border-[#6366f1] transition-colors text-sm font-medium text-[#94a3b8] hover:text-white"
         >
-          <ArrowLeft size={16} /> Menu
+          <ArrowLeft size={16} /> 
         </Link>
         
         <div className="text-center">

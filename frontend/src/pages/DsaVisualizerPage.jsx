@@ -27,7 +27,7 @@ const features = [
     name: "Linked List",
     description: "Dynamic data structure with nodes connected through references. Explore different types of linked lists.",
     icon: List,
-    path: "/linked-list",
+    path: "/linkedlist",
   },
  
   {
@@ -55,10 +55,10 @@ const features = [
     path: "/dynamic-programming",
   },
   {
-    name: "Sorting Algorithms",
-    description: "Sorting Algorithms",
+    name: "Hashing",
+    description: "Hashing Algorithms",
     icon: BrainCircuit,
-    path: "/sorting",
+    path: "/hashing",
   },
 ];
 

@@ -11,12 +11,13 @@ import FlowchartGeneratorPage from "./pages/FlowChartGeneratorPage.jsx";
 
 // 🧮 DSA Pages
 import StackPage from "./pages/dsa/StackPage.jsx";
+        {/*Queue */}
 import QueueHome from "./pages/dsa/QueueHome.jsx";
 import SimpleQueueVisualizer from "./pages/dsa/SimpleQueueVisualizer";
 import CircularQueueVisualizer from "./pages/dsa//CircularQueueVisualizer";
 import DequeVisualizer from "./pages/dsa/DequeueVisualizer.jsx";
 import PriorityQueueVisualizer from "./pages/dsa/PriorityQueueVisualizer";
-import LinkedListPage from "./pages/dsa/LinkedListPage.jsx";
+
 import SortingPage from "./pages/dsa/SortingPage.jsx";
 import SearchingPage from "./pages/dsa/SearchingPage.jsx";
 import TreePage from "./pages/dsa/TreePage.jsx";
@@ -35,11 +36,28 @@ import TopologicalSortVisualization from "./pages/dsa/TopologicalSortVisualizati
 import GraphLandingPage from "./pages/dsa/GraphLandingPage.jsx";
 import DijkstraVisualization from "./pages/dsa/DijkstraVisualization.jsx";
 import ConnectedComponents from "./pages/dsa/ConnectedComponents.jsx";
-import HashingPage from "./pages/dsa/HashingPage.jsx"
+import HashingPage from "./pages/dsa/HashingHome.jsx"
+
+
+
+// Linked List Visualizers
+import LinkedListHome from "./pages/dsa/LinkedListHome1.jsx";
+import SinglyLinkedListVisualizer from "./pages/dsa/SinglyLinkedListVisualizer.jsx";
+import DoublyLinkedListVisualizer from "./pages/dsa/DoublyLinkedListVisualizer.jsx";
+import CircularSinglyLinkedListVisualizer from "./pages/dsa/CircularSinglyLinkedListVisualizer.jsx";
+import CircularDoublyLinkedListVisualizer from "./pages/dsa/CircularDoublyLinkedListVisualizer.jsx";
 
 // 📊 DP Components
 import DpVisualizationPage from "./components/dp/DpVisualizationPage.jsx";
 import LCS from "./components/dynamic-programming/LCS.jsx";
+
+
+// Hashing Visualizers
+import SimpleHashing from './pages/dsa/SimpleHashing.jsx';
+import SeparateChaining from './pages/dsa/SeparateChaining.jsx';
+import LinearProbing from './pages/dsa/LinearProbing.jsx';
+import QuadraticProbing from './pages/dsa/QuadraticProbing.jsx';
+import DoubleHashing from './pages/dsa/DoubleHashing.jsx';
 
 // 🔍 Array Algorithm
 import AlgorithmSelector from "./components/Array/AlgorithmSelector.jsx";
@@ -68,14 +86,30 @@ function App() {
 
         {/* 🧱 Data Structures */}
         <Route path="/stack" element={<StackPage />} />
+
+        {/*Queue */}
         <Route path="/queue" element={<QueueHome />} />
         <Route path="/queue/simple" element={<SimpleQueueVisualizer />} />
         <Route path="/queue/circular" element={<CircularQueueVisualizer />} />
         <Route path="/queue/dequeue" element={<DequeVisualizer/>} />
         <Route path="/queue/priority" element={<PriorityQueueVisualizer />} />
-        <Route path="/linked-list" element={<LinkedListPage />} />
+      
+         {/*LinkedList */}
+        <Route path="/linkedlist" element={<LinkedListHome />} />
+        <Route path="/linkedlist/singly" element={<SinglyLinkedListVisualizer />} />
+        <Route path="/linkedlist/doubly" element={<DoublyLinkedListVisualizer />} />
+        <Route path="/linkedlist/circular-singly" element={<CircularSinglyLinkedListVisualizer />} />
+        <Route path="/linkedlist/circular-doubly" element={<CircularDoublyLinkedListVisualizer />} />
+
         <Route path="/heap" element={<HeapVisualizer />} />
+
+        {/*Hashing */}
         <Route path="/hashing" element={<HashingPage />} />
+        <Route path="/hashing/simple" element={<SimpleHashing />} />
+        <Route path="/hashing/chaining" element={<SeparateChaining />} />
+        <Route path="/hashing/linear-probing" element={<LinearProbing />} />
+        <Route path="/hashing/quadratic-probing" element={<QuadraticProbing />} />        
+        <Route path="/hashing/double-hashing" element={<DoubleHashing />} />
 
         {/* 🧮 Array Algorithms */}
         <Route path="/array" element={<AlgorithmSelector />} />

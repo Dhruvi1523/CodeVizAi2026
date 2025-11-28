@@ -195,7 +195,7 @@ export default function PriorityQueueVisualizer() {
           to="/queue" 
           className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#1e293b] border border-[#334155] hover:border-[#6366f1] transition-all text-sm font-medium text-[#94a3b8] hover:text-white"
         >
-          <ArrowLeft size={18} /> Menu
+          <ArrowLeft size={18} /> 
         </Link>
         
         <div className="text-center">
