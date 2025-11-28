@@ -8,14 +8,14 @@ export default function FeaturesSection() {
 const features = [
   {
     title: "Code Runner",
-    path: "/Code",
+    path: "/code",
     description: "Write, run, and debug code in multiple programming languages...",
     icon: <Code2 className="w-6 h-6" />,
     color: "bg-blue-600",
   },
   {
     title: "Complexity Analyzer",
-    path: "/complexity-analyzer",
+    path: "/code",
     description: "Analyze time and space complexity...",
     icon: <BarChart3 className="w-6 h-6" />,
     color: "bg-green-600",
@@ -29,7 +29,7 @@ const features = [
   },
   {
     title: "Flowchart Generator",
-    path: "/flowchart-generator",
+    path: "/flow-chart-generator",
     description: "Generate beautiful flowcharts...",
     icon: <Share2 className="w-6 h-6" />,
     color: "bg-orange-600",

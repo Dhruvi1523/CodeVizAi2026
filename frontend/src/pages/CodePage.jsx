@@ -110,12 +110,13 @@ print("Factorial of", num, "is:", factorial(num))
 
     setIsExplaining(true);
     try {
-      const res = await fetch("http://127.0.0.1:8000/ai/explain_full", {
+      const res = await fetch("https://codevizai2026.onrender.com/ai/explain_full", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code: code }),
       });
 
+      console.log(res)
       if (!res.ok) throw new Error("Failed to fetch AI explanation");
 
       const data = await res.json();

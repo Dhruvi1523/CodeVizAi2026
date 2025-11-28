@@ -37,7 +37,7 @@ const features = [
     name: "Linked List",
     description: "A sequence of nodes connected through pointers. Supports dynamic memory allocation and efficient insertions/deletions.",
     icon: ListOrdered,
-    path: "/linked-list",
+    path: "/linkedlist",
   },
   {
     name: "Tree",
