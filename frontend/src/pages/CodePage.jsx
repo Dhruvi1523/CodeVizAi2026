@@ -69,7 +69,7 @@ print("Factorial of", num, "is:", factorial(num))
     callStackFrameRefs.current.clear();
     setFullExplanation(null);
     try {
-      const res = await fetch("http://127.0.0.1:8000/trace", {
+      const res = await fetch("https://codevizai2026.onrender.com/trace", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code: code || "" }),

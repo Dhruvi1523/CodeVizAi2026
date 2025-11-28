@@ -52,7 +52,7 @@ export default function DpVisualizationPage() {
     setIsLoading(true);
     setIsPlaying(false);
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/visualize/${algoId}`, {
+      const response = await fetch(`https://codevizai2026.onrender.com/api/visualize/${algoId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(parsed),
