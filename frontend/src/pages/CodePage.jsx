@@ -116,7 +116,6 @@ print("Factorial of", num, "is:", factorial(num))
         body: JSON.stringify({ code: code }),
       });
 
-      console.log(res)
       if (!res.ok) throw new Error("Failed to fetch AI explanation");
 
       const data = await res.json();
