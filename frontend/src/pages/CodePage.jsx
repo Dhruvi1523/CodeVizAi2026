@@ -85,6 +85,9 @@ print("Factorial of", num, "is:", factorial(num))
       setOutput(data.output || "");
       setCallTree(data.call_tree || null);
 
+      if (data.trace && data.trace.length > 0) {
+        setCurrentStep(0);
+      }
     } catch (err) {
       setError(
         `Failed to fetch trace: ${err.message}. Is the backend server running?`
@@ -463,12 +466,11 @@ print("Factorial of", num, "is:", factorial(num))
     }
   }
 
- const handleCopyExplanation = () => {
+  const handleCopyExplanation = () => {
     if (!fullExplanation) return;
     navigator.clipboard.writeText(fullExplanation);
     alert("Explanation copied!");
   };
- 
 
   return (
     <div className="flex flex-col h-screen bg-[#0f172a] text-[#f1f5f9] font-sans ">
@@ -520,7 +522,7 @@ print("Factorial of", num, "is:", factorial(num))
                     <button
                       onClick={() => setActiveTab("complexity")}
                       className={`px-4 py-2 font-semibold transition-colors ${
-                        activeTab === "output"
+                        activeTab === "complexity"
                           ? "border-b-2 border-blue-500 text-white"
                           : "text-gray-400"
                       }`}
@@ -619,7 +621,9 @@ print("Factorial of", num, "is:", factorial(num))
                                   </p>
                                 </div>
                               ) : (
-                                <Explanation fullExplanation={fullExplanation} />
+                                <Explanation
+                                  fullExplanation={fullExplanation}
+                                />
                               )}
                             </div>
                           </div>

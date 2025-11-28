@@ -11,7 +11,11 @@ import FlowchartGeneratorPage from "./pages/FlowChartGeneratorPage.jsx";
 
 // 🧮 DSA Pages
 import StackPage from "./pages/dsa/StackPage.jsx";
-import QueuePage from "./pages/dsa/QueuePage.jsx";
+import QueueHome from "./pages/dsa/QueueHome.jsx";
+import SimpleQueueVisualizer from "./pages/dsa/SimpleQueueVisualizer";
+import CircularQueueVisualizer from "./pages/dsa//CircularQueueVisualizer";
+import DequeVisualizer from "./pages/dsa/DequeueVisualizer.jsx";
+import PriorityQueueVisualizer from "./pages/dsa/PriorityQueueVisualizer";
 import LinkedListPage from "./pages/dsa/LinkedListPage.jsx";
 import SortingPage from "./pages/dsa/SortingPage.jsx";
 import SearchingPage from "./pages/dsa/SearchingPage.jsx";
@@ -64,7 +68,11 @@ function App() {
 
         {/* 🧱 Data Structures */}
         <Route path="/stack" element={<StackPage />} />
-        <Route path="/queue" element={<QueuePage />} />
+        <Route path="/queue" element={<QueueHome />} />
+        <Route path="/queue/simple" element={<SimpleQueueVisualizer />} />
+        <Route path="/queue/circular" element={<CircularQueueVisualizer />} />
+        <Route path="/queue/dequeue" element={<DequeVisualizer/>} />
+        <Route path="/queue/priority" element={<PriorityQueueVisualizer />} />
         <Route path="/linked-list" element={<LinkedListPage />} />
         <Route path="/heap" element={<HeapVisualizer />} />
         <Route path="/hashing" element={<HashingPage />} />
