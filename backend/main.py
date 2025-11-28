@@ -13,7 +13,7 @@ app = FastAPI()
 # This allows your React frontend (running on a different port) to communicate with this backend.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"], # Add your frontend's URL
+    allow_origins=["http://localhost:5173", "http://localhost:3000" , "https://code-viz-ai2026.vercel.app"], # Add your frontend's URL
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
