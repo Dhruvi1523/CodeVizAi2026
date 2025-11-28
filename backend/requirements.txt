@@ -8,17 +8,8 @@ torch
 pandas
 numpy
 scipy
-seaborn
-matplotlib
-pytest
-pytest-cov
-coverage
-pylint
-autopep8
-isort
 requests
 aiohttp
-aiohttp-client
 memory_profiler
 astunparse
 jinja2
