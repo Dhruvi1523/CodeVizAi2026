@@ -129,7 +129,7 @@ function FlowchartGenerator() {
         setErrorMessage("");
 
         try {
-            const res = await axios.post("http://localhost:8000/generate", {
+            const res = await axios.post("https://codevizai2026.onrender.com/generate", {
                 code: input,
                 lang: 'python'
             });

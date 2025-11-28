@@ -16,7 +16,7 @@ const TracerPanel = () => {
     setTraceOutput(null);
 
     try {
-      const response = await axios.post('http://localhost:8000/trace', {
+      const response = await axios.post('https://codevizai2026.onrender.com/trace', {
         code,
         language: lang,
       });

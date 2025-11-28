@@ -15,7 +15,7 @@ export default function ComplexityTab({ code, inputSizes }) {
       setLoading(true);
       setError(null);
       try {
-        const response = await axios.post("http://localhost:8000/analyze_code", {
+        const response = await axios.post("https://codevizai2026.onrender.com/analyze_code", {
           code,
           func_name: selectedFunc || null,
           input_sizes: inputSizes,

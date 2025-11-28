@@ -83,7 +83,7 @@ pip install -r requirement.txt
 uvicorn main:app --reload
 ```
 
-- The backend will run at: [http://localhost:8000](http://localhost:8000)
+- The backend will run at: [https://codevizai2026.onrender.com](http://localhost:8000)
 
 ---
 
