@@ -19,3 +19,7 @@ isort
 requests
 aiohttp
 aiohttp-client
+memory_profiler
+astunparse
+jinja2
+importlib-metadata
