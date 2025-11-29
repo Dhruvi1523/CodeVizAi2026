@@ -26,8 +26,8 @@ import BinaryTree from "./pages/dsa/BinaryTree.jsx";
 import AVLTree from "./pages/dsa/AVLTree.jsx";
 import RedBlackTree from "./pages/dsa/RedBlackTree.jsx";
 import GeneralTree from "./pages/dsa/GeneralTree.jsx";
-import BTree from "./pages/dsa/BTree.jsx";
-import BPlusTree from "./pages/dsa/BPlusTree.jsx";
+// import BTree from "./pages/dsa/BTree.jsx";
+// import BPlusTree from "./pages/dsa/BPlusTree.jsx";
 import DynamicProgramingPage from "./pages/dsa/DynamicProgramingPage.jsx";
 import HeapVisualizer from './components/visualizers/HeapVisualizer';
 import DFSVisualization from "./pages/dsa/DFSVisualization.jsx";
@@ -123,8 +123,8 @@ function App() {
         <Route path="/tree/red-black-tree" element={<RedBlackTree />} />
         <Route path="/tree/binary-tree" element={<BinaryTree />} />
         <Route path="/tree/general-tree" element={<GeneralTree />} />
-        <Route path="/tree/b-tree" element={<BTree />} />
-        <Route path="/tree/b-plus-tree" element={<BPlusTree />} />
+        {/* <Route path="/tree/b-tree" element={<BTree />} />
+        <Route path="/tree/b-plus-tree" element={<BPlusTree />} /> */}
 
         {/* 🌐 Graphs */}
         <Route path="/graph-dsa" element={<GraphLandingPage />} />
