@@ -1,305 +1,382 @@
-import React, { useEffect, useState, useRef } from "react";
-import { Link } from "react-router-dom";
+// src/pages/dsa/BinarySearchTree.jsx
+import React, { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Tree from "react-d3-tree";
-import {
-  deepCopy,
-  toConvert,
-  getNodeName,
-  createNode,
-  findAndMarkDeleting,
-  getAlgorithmSteps,
-} from "../../utils/treeHelpers";
-// BST-Specific Logic
-const insertBST = (node, value) => {
-  if (!node) return createNode(value, "Binary Search Tree");
-  if (value < node.value) node.left = insertBST(node.left, value);
-  else if (value > node.value) node.right = insertBST(node.right, value);
-  return node;
+
+let NEXT_ID = 1;
+
+const createNode = (value) => ({
+  id: NEXT_ID++,
+  value,
+  left: null,
+  right: null,
+});
+
+const cloneTree = (node) => {
+  if (!node) return null;
+  return {
+    id: node.id,
+    value: node.value,
+    left: cloneTree(node.left),
+    right: cloneTree(node.right),
+  };
 };
 
-const deleteBST = (node, value) => {
-  if (!node) return node;
-  if (value < node.value) node.left = deleteBST(node.left, value);
-  else if (value > node.value) node.right = deleteBST(node.right, value);
-  else {
-    if (!node.left) return node.right;
-    if (!node.right) return node.left;
-    const temp = minValueNode(node.right);
-    node.value = temp.value;
-    node.right = deleteBST(node.right, temp.value);
-  }
-  return node;
+const findValue = (node, value) => {
+  if (!node) return false;
+  if (node.value === value) return true;
+  return value < node.value ? findValue(node.left, value) : findValue(node.right, value);
 };
 
-const minValueNode = (node) => {
-  let current = node;
-  while (current.left) current = current.left;
-  return current;
-};
-
-const simulateOperation = (variables, operation, params, treeType) => {
-  let tree = deepCopy(variables.tree || { root: null }); // Deep copy to avoid mutating
-  let root = tree.root;
-  let states = [];
-
-  if (!root && operation !== "insert") return [];
-
-  if (operation === "insert") {
-    let newRoot = insertBST(root, params.value);
-    if (newRoot) root = newRoot;
-    states.push(toConvert(root, treeType, getNodeName));
-  } else if (operation === "delete") {
-    let tempRoot = findAndMarkDeleting(deepCopy(root), params.value, treeType);
-    if (tempRoot) {
-      states.push(toConvert(tempRoot, treeType, getNodeName));
+const insert = (root, value, frames = []) => {
+  const insertRec = (node) => {
+    if (!node) {
+      const newNode = createNode(value);
+      frames.push({ tree: cloneTree(newNode), msg: `Inserted ${value}` });
+      return newNode;
     }
-    let newRoot = deleteBST(root, params.value);
-    if (newRoot) root = newRoot;
-    states.push(toConvert(root, treeType, getNodeName));
-  }
 
-  tree.root = root;
-  variables.tree = tree;
-  return states;
-};
+    const cloned = { ...node, left: node.left, right: node.right };
 
-function BinarySearchTree() {
-  const treeType = "Binary Search Tree";
-  const [treeData, setTreeData] = useState(null);
-  const [isAnimating, setIsAnimating] = useState(false);
-  const [inputValue, setInputValue] = useState("");
-  const [animationSpeed, setAnimationSpeed] = useState(1000);
-  const [algorithmSteps, setAlgorithmSteps] = useState([]);
-  const [variables, setVariables] = useState({ tree: { root: null } });
-
-  const stepsEndRef = useRef(null);
-  const treeContainerRef = useRef(null); // Ref for dynamic sizing
-
-  // Auto-scroll for algorithm steps
-  useEffect(() => {
-    if (stepsEndRef.current) {
-      stepsEndRef.current.scrollIntoView({ behavior: "smooth" });
+    if (value < node.value) {
+      frames.push({
+        tree: cloneTree(cloned),
+        msg: `${value} < ${node.value} → go left`,
+        highlight: node.id,
+      });
+      cloned.left = insertRec(node.left);
+    } else if (value > node.value) {
+      frames.push({
+        tree: cloneTree(cloned),
+        msg: `${value} > ${node.value} → go right`,
+        highlight: node.id,
+      });
+      cloned.right = insertRec(node.right);
+    } else {
+      frames.push({ tree: cloneTree(cloned), msg: `Duplicate ${value} ignored`, highlight: node.id });
+      return cloned;
     }
-  }, [algorithmSteps]);
-
-  // Reset tree on mount
-  useEffect(() => {
-    setVariables({ tree: { root: null } });
-    setTreeData(null);
-    setAlgorithmSteps([]);
-    setInputValue("");
-  }, []);
-
-  // Calculate dynamic translate based on container size
-  const getTranslate = () => {
-    if (treeContainerRef.current) {
-      const { width, height } = treeContainerRef.current.getBoundingClientRect();
-      return { x: width / 2, y: height / 6 }; // Center horizontally, shift up vertically
-    }
-    return { x: 240, y: 60 }; // Fallback
+    return cloned;
   };
 
-  const animateTree = async (operation, value) => {
-    if (isAnimating || !value) return; // Prevent animation if already animating or no value
+  const newRoot = insertRec(root);
+  frames.push({ tree: cloneTree(newRoot), msg: `Insert complete` });
+  return { newRoot, frames };
+};
+
+const deleteNode = (root, value, frames = []) => {
+  const deleteRec = (node, target = value) => {
+    if (!node) {
+      frames.push({ tree: cloneTree(root), msg: `${target} not found` });
+      return null;
+    }
+
+    const cloned = { ...node, left: node.left, right: node.right };
+
+    if (target < node.value) {
+      frames.push({ tree: cloneTree(cloned), msg: `Searching left...`, highlight: node.id });
+      cloned.left = deleteRec(node.left, target);
+    } else if (target > node.value) {
+      frames.push({ tree: cloneTree(cloned), msg: `Searching right...`, highlight: node.id });
+      cloned.right = deleteRec(node.right, target);
+    } else {
+      frames.push({ tree: cloneTree(cloned), msg: `Found ${target}, deleting...`, highlight: node.id });
+
+      if (!cloned.left) {
+        frames.push({ tree: cloneTree(cloned.right), msg: `Node deleted, right child moved up` });
+        return cloned.right;
+      }
+      if (!cloned.right) {
+        frames.push({ tree: cloneTree(cloned.left), msg: `Node deleted, left child moved up` });
+        return cloned.left;
+      }
+
+      // find successor (leftmost in right subtree)
+      let succ = cloned.right;
+      while (succ.left) succ = succ.left;
+
+      // copy successor's value/id into current spot
+      cloned.value = succ.value;
+      cloned.id = succ.id;
+
+      frames.push({ tree: cloneTree(cloned), msg: `Replaced with successor ${succ.value}`, highlight: cloned.id });
+
+      // remove the successor node from the right subtree by deleting succ.value
+      cloned.right = deleteRec(cloned.right, succ.value);
+    }
+    return cloned;
+  };
+
+  const newRoot = deleteRec(root);
+  frames.push({ tree: newRoot ? cloneTree(newRoot) : null, msg: `Delete complete` });
+  return { newRoot, frames };
+};
+
+const toD3 = (node, highlightId = null) => {
+  if (!node) return null;
+
+  const hasLeft = !!node.left;
+  const hasRight = !!node.right;
+
+  const children = [];
+  if (hasLeft) children.push(toD3(node.left, highlightId));
+  if (hasRight) children.push(toD3(node.right, highlightId));
+
+  // If only one child exists, add an invisible placeholder on the other side
+  // so the real child will render to left/right of the parent instead of centered.
+  if (!hasLeft && hasRight) {
+    // add left placeholder so right child appears on the right
+    children.unshift({
+      name: "",
+      attributes: { placeholder: true },
+      children: undefined,
+    });
+  } else if (hasLeft && !hasRight) {
+    // add right placeholder so left child appears on the left
+    children.push({
+      name: "",
+      attributes: { placeholder: true },
+      children: undefined,
+    });
+  }
+
+  return {
+    name: String(node.value),
+    attributes: { id: node.id, isHighlighted: node.id === highlightId },
+    children: children.length ? children : undefined,
+  };
+};
+
+export default function BinarySearchTree() {
+  const [root, setRoot] = useState(null);
+  const [d3Data, setD3Data] = useState(null);
+  const [input, setInput] = useState("");
+  const [speed, setSpeed] = useState(1000);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [log, setLog] = useState([]);
+  const [currentHighlight, setCurrentHighlight] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  const containerRef = useRef(null);
+  const logRef = useRef(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 1024);
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  useEffect(() => {
+    setD3Data(root ? toD3(root, currentHighlight) : null);
+  }, [root, currentHighlight]);
+
+  useEffect(() => {
+    if (logRef.current) {
+      logRef.current.scrollTop = logRef.current.scrollHeight;
+    }
+  }, [log]);
+
+  const getTranslate = () => {
+    if (!containerRef.current) return { x: 300, y: 80 };
+    const { width, height } = containerRef.current.getBoundingClientRect();
+    return { x: width / 2, y: Math.max(60, height * 0.1) };
+  };
+
+  const playAnimation = async (frames) => {
     setIsAnimating(true);
-    setAlgorithmSteps([]);
-
-    let newVariables = deepCopy(variables); // Deep copy variables
-    let states = [];
-    let steps = [];
-
-    if (operation === "display") {
-      if (newVariables.tree?.root) {
-        states.push(toConvert(newVariables.tree.root, treeType, getNodeName));
-        steps.push("Displaying current tree structure");
-      }
-    } else if (operation === "insert" && inputValue) {
-      const parsedValue = parseInt(value, 10);
-      if (isNaN(parsedValue)) {
-        setAlgorithmSteps(["Invalid input: Please enter a valid number"]);
-        setIsAnimating(false);
-        return;
-      }
-      steps.push(`Inserting value: ${parsedValue}`);
-      states = simulateOperation(newVariables, "insert", { value: parsedValue }, treeType);
-      steps = steps.concat(getAlgorithmSteps("insert", parsedValue, treeType));
-    } else if (operation === "delete" && inputValue) {
-      const parsedValue = parseInt(value, 10);
-      if (isNaN(parsedValue)) {
-        setAlgorithmSteps(["Invalid input: Please enter a valid number"]);
-        setIsAnimating(false);
-        return;
-      }
-      steps.push(`Deleting value: ${parsedValue}`);
-      states = simulateOperation(newVariables, "delete", { value: parsedValue }, treeType);
-      steps = steps.concat(getAlgorithmSteps("delete", parsedValue, treeType));
+    for (const frame of frames) {
+      setD3Data(frame.tree ? toD3(frame.tree, frame.highlight || null) : null);
+      setCurrentHighlight(frame.highlight || null);
+      setLog((prev) => [...prev.slice(-100), frame.msg]);
+      await new Promise((r) => setTimeout(r, speed));
     }
-
-    if (states.length === 0 && newVariables.tree?.root) {
-      states.push(toConvert(newVariables.tree.root, treeType, getNodeName));
-    }
-
-    setAlgorithmSteps(steps);
-    setVariables(newVariables);
-
-    // Animate through states
-    for (let i = 0; i < states.length; i++) {
-      // Reset isAnimating flags to prevent rendering artifacts
-      const state = deepCopy(states[i]);
-      const resetAnimating = (node) => {
-        if (!node) return;
-        node.isAnimating = false;
-        if (node.children) {
-          node.children.forEach(resetAnimating);
-        }
-      };
-      resetAnimating(state);
-      setTreeData(state);
-      setAlgorithmSteps((prev) => [
-        ...prev.slice(0, i),
-        `Step ${i + 1}: ${steps[i] || "Updating tree"}`,
-        ...prev.slice(i + 1),
-      ]);
-      await new Promise((r) => setTimeout(r, animationSpeed));
-    }
-
-    // Ensure final state is set
-    if (states.length > 0) {
-      setTreeData(states[states.length - 1]);
-    }
-
+    setCurrentHighlight(null);
     setIsAnimating(false);
   };
 
-  return (
-    <div>
-      <header className="bg-gray-800 p-4 shadow-md mb-4 rounded-xl flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-100">Binary Search Tree Visualizer</h1>
-          <p className="text-sm text-gray-400 mt-1">Trees where each node has at most two children, sorted by value.</p>
-        </div>
-        <Link
-          to="/tree-dsa"
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-500 disabled:opacity-60 transition"
+  const handleInsert = async () => {
+    if (isAnimating) return;
+    const val = parseInt(input, 10);
+    if (isNaN(val)) {
+      setLog((l) => [...l, "Please enter a valid number"]);
+      return;
+    }
+
+    if (root && findValue(root, val)) {
+      setLog((l) => [...l, `Duplicate ${val} not allowed`]);
+      setInput("");
+      return;
+    }
+
+    const { newRoot, frames } = insert(root, val);
+    setRoot(newRoot);
+    await playAnimation(frames);
+    setInput("");
+  };
+
+  const handleDelete = async () => {
+    if (isAnimating || !root) return;
+    const val = parseInt(input, 10);
+    if (isNaN(val)) {
+      setLog((l) => [...l, "Invalid number"]);
+      return;
+    }
+
+    const { newRoot, frames } = deleteNode(root, val);
+    setRoot(newRoot);
+    await playAnimation(frames);
+    setInput("");
+  };
+
+  const handleClear = () => {
+    NEXT_ID = 1;
+    setRoot(null);
+    setD3Data(null);
+    setLog([]);
+    setInput("");
+  };
+
+  const CustomNode = ({ nodeDatum }) => {
+    const isPlaceholder = nodeDatum.attributes?.placeholder;
+    if (isPlaceholder) return <g />;
+
+    const nodeRadius = isMobile ? 24 : 30;
+    const textSize = isMobile ? 14 : 18;
+
+    return (
+      <g>
+        <circle
+          r={nodeRadius}
+          fill="#ffffff"
+          stroke="#10b981"
+          strokeWidth={3}
+        />
+        <text
+          textAnchor="middle"
+          dy=".3em"
+          fontSize={textSize}
+          fontWeight="bold"
+          fill="#000000"
         >
-          Back to Landing
-        </Link>
+          {nodeDatum.name}
+        </text>
+      </g>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-900 text-gray-200 p-2 sm:p-4">
+      <header className="bg-gray-800 p-3 sm:p-4 shadow-md mb-3 sm:mb-4 rounded-lg sm:rounded-xl flex items-center justify-center relative">
+        <button
+          onClick={() => navigate(-1)}
+          className="absolute left-2 sm:left-4 flex items-center gap-2 px-2 sm:px-3 py-2 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg border border-gray-600 transition text-xs sm:text-sm"
+        >
+          <span>←</span>
+          <span>Back</span>
+        </button>
+
+        <div className="text-center">
+          <h1 className="text-lg sm:text-2xl font-bold text-gray-100">Binary Search Tree</h1>
+          <p className="text-xs sm:text-sm text-gray-400 mt-1">Insert, Delete & Search visualization</p>
+        </div>
       </header>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Left Panel (Controls + Algorithm Steps) */}
-        <div className="flex flex-col gap-3 lg:col-span-1">
-          {/* Controls */}
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 auto-rows-max lg:auto-rows-auto">
+        <div className="bg-gray-800 p-3 sm:p-6 rounded-lg sm:rounded-xl shadow-lg lg:row-span-2">
           <input
             type="number"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            placeholder="Enter value to insert/delete"
-            className="p-2 rounded-lg border border-gray-700 bg-gray-800 text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-green-400 outline-none"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleInsert()}
+            placeholder="Enter value"
+            className="w-full p-2 sm:p-3 rounded-lg border border-gray-700 bg-gray-900 text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 mb-2 sm:mb-4 text-sm sm:text-base"
+            disabled={isAnimating}
           />
-          <div className="flex gap-2 flex-wrap">
+
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mb-2 sm:mb-4">
             <button
-              onClick={() => animateTree("insert", inputValue)}
-              disabled={isAnimating || !inputValue}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-500 disabled:opacity-60 transition"
+              onClick={handleInsert}
+              disabled={isAnimating}
+              className="flex-1 py-2 sm:py-3 bg-green-600 hover:bg-green-500 disabled:opacity-60 rounded-lg font-bold text-white transition text-sm sm:text-base"
             >
-              Insert Node
+              Insert
             </button>
             <button
-              onClick={() => animateTree("delete", inputValue)}
-              disabled={isAnimating || !inputValue}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg shadow hover:bg-red-500 disabled:opacity-60 transition"
+              onClick={handleDelete}
+              disabled={isAnimating || !root}
+              className="flex-1 py-2 sm:py-3 bg-red-600 hover:bg-red-500 disabled:opacity-60 rounded-lg font-bold text-white transition text-sm sm:text-base"
             >
-              Delete Node
-            </button>
-             <button
-              onClick={() => {
-                setVariables({ tree: { root: null } });
-                setTreeData(null);
-                setAlgorithmSteps([]);
-                setInputValue("");
-                setParentValue("");
-              }}
-              className="px-4 py-2 bg-gray-600 text-white rounded-lg shadow hover:bg-gray-500 transition"
-            >
-              Clear Tree
+              Delete
             </button>
           </div>
-          {/* Animation Speed */}
-          <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-300">Animation Speed (ms):</label>
+
+          <button
+            onClick={handleClear}
+            className="w-full py-2 sm:py-3 bg-gray-700 hover:bg-gray-600 rounded-lg font-bold text-white transition mb-2 sm:mb-6 text-sm sm:text-base"
+          >
+            Clear
+          </button>
+
+          <div className="flex items-center gap-2 mb-3 sm:mb-6">
+            <label className="text-xs sm:text-sm text-gray-300">Speed:</label>
             <input
               type="range"
-              min="500"
-              max="3000"
+              min="300"
+              max="2000"
               step="100"
-              value={animationSpeed}
-              onChange={(e) => setAnimationSpeed(Number(e.target.value))}
-              className="w-32 accent-green-500"
+              value={speed}
+              onChange={(e) => setSpeed(+e.target.value)}
+              className="flex-1 accent-green-500"
             />
-            <span className="text-gray-300">{animationSpeed}ms</span>
+            <span className="text-xs sm:text-sm text-gray-300 w-12 sm:w-16 text-right">{speed}ms</span>
           </div>
-          {/* Algorithm Steps Panel */}
-          <div className="bg-gray-800 p-4 rounded-xl shadow-lg h-[50vh] overflow-y-auto">
-            <h2 className="text-lg font-semibold mb-2 text-green-400">Algorithm Steps</h2>
-            {algorithmSteps.length > 0 ? (
-              <ul className="list-disc pl-5 text-sm text-gray-200">
-                {algorithmSteps.map((step, index) => (
-                  <li key={index} className="mb-1">
-                    {step}
-                  </li>
-                ))}
-                <div ref={stepsEndRef} /> {/* Auto-scroll target */}
-              </ul>
-            ) : (
-              <p className="text-gray-500">
-                No steps to display. Perform an operation to see the algorithm steps.
-              </p>
-            )}
+
+          <div className="bg-gray-900 p-3 sm:p-4 rounded-lg max-h-48 sm:max-h-64 overflow-y-auto border border-gray-700">
+            <h2 className="text-sm sm:text-lg font-semibold mb-2 text-green-400">Steps</h2>
+            <div ref={logRef} className="text-xs sm:text-sm text-gray-300 space-y-1 font-mono">
+              {log.length === 0 ? (
+                <p className="text-gray-500 text-xs">Perform an operation...</p>
+              ) : (
+                log.map((msg, i) => (
+                  <div key={i} className="text-green-300">
+                    {msg}
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
-        {/* Tree Visualization */}
+
         <div
-          className="bg-gray-800 p-4 rounded-xl shadow-lg h-[60vh] overflow-hidden lg:col-span-2"
-          ref={treeContainerRef}
+          ref={containerRef}
+          className="bg-gray-800 p-3 sm:p-4 rounded-lg sm:rounded-xl shadow-lg overflow-hidden lg:col-span-2 min-h-96 sm:min-h-[60vh] border border-gray-700"
         >
-          {treeData ? (
+          {d3Data ? (
             <Tree
-              data={treeData}
+              data={d3Data}
               orientation="vertical"
               translate={getTranslate()}
-              renderCustomNodeElement={({ nodeDatum }) => (
-                <g>
-                  <circle
-                    r={20}
-                    fill={nodeDatum.isAnimating ? "#ffffff" : "#ffffff"}
-                    stroke="#f7f1fa"
-                    strokeWidth={2}
-                  />
-                  <text
-                    fill={nodeDatum.isAnimating ? "#1f2937" : "#ffffff"}
-                    fontSize="14"
-                    textAnchor="middle"
-                    alignmentBaseline="middle"
-                  >
-                    {nodeDatum.name}
-                  </text>
-                </g>
-              )}
-              pathClassFunc={() => "stroke-green-500 stroke-2"}
-              zoomable
-              collapsible
-              initialDepth={2}
-              separation={{ siblings: 1, nonSiblings: 2 }} // Adjust node spacing
+              zoomable={true}
+              collapsible={false}
+              separation={{ siblings: isMobile ? 1.5 : 1.8, nonSiblings: isMobile ? 1.8 : 2.2 }}
+              pathFunc="diagonal"
+              renderCustomNodeElement={CustomNode}
+              styles={{
+                links: {
+                  stroke: "#10b981",
+                  strokeWidth: isMobile ? 2 : 3,
+                },
+              }}
             />
           ) : (
-            <p className="text-gray-500 h-full grid place-items-center text-center">
-              Enter values and use buttons to visualize the tree.
-            </p>
+            <div className="h-full flex items-center justify-center text-center px-4">
+              <p className="text-gray-500 text-sm sm:text-lg">Enter values and use buttons to visualize the tree.</p>
+            </div>
           )}
         </div>
       </div>
     </div>
   );
 }
-
-export default BinarySearchTree;
