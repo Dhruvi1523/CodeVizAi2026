@@ -1,9 +1,8 @@
-import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import Tree from "react-d3-tree";
 import { deepCopy, toConvert, getNodeName, createNode, findAndMarkDeleting, getAlgorithmSteps } from "../../utils/treeHelpers";
 
-// Binary Tree Specific Logic (Level-order insert)
 const insertBinary = (root, value) => {
   if (!root) return createNode(value, "Binary Tree");
   const newNode = createNode(value, "Binary Tree");
@@ -77,13 +76,24 @@ function BinaryTree() {
   const [animationSpeed, setAnimationSpeed] = useState(1000);
   const [algorithmSteps, setAlgorithmSteps] = useState([]);
   const [variables, setVariables] = useState({ tree: { root: null } });
+  const [isMobile, setIsMobile] = useState(false);
+
+  const stepsRef = useRef(null);
+  const treeContainerRef = useRef(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    setVariables({ tree: { root: null } });
-    setTreeData(null);
-    setAlgorithmSteps([]);
-    setInputValue("");
+    const handleResize = () => setIsMobile(window.innerWidth < 1024);
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  useEffect(() => {
+    if (stepsRef.current) {
+      stepsRef.current.scrollTop = stepsRef.current.scrollHeight;
+    }
+  }, [algorithmSteps]);
 
   const animateTree = async (operation, value) => {
     if (isAnimating) return;
@@ -95,12 +105,7 @@ function BinaryTree() {
     let states = [];
     let steps = [];
 
-    if (operation === "display") {
-      if (newVariables.tree?.root) {
-        states.push(toConvert(newVariables.tree.root, treeType, getNodeName));
-        steps.push("Displaying current tree structure");
-      }
-    } else if (operation === "insert" && inputValue) {
+    if (operation === "insert" && inputValue) {
       steps.push(`Inserting value: ${value}`);
       states = simulateOperation(newVariables, "insert", { value: parseInt(value, 10) }, treeType);
       steps = steps.concat(getAlgorithmSteps("insert", value, treeType));
@@ -119,7 +124,6 @@ function BinaryTree() {
 
     for (let i = 0; i < states.length; i++) {
       setTreeData({ ...states[i] });
-      setAlgorithmSteps((prev) => [...prev.slice(0, i), `Step ${i + 1}: ${steps[i] || "Updating tree"}`, ...prev.slice(i + 1)]);
       await new Promise((r) => setTimeout(r, animationSpeed));
     }
 
@@ -127,46 +131,60 @@ function BinaryTree() {
   };
 
   const CustomNode = ({ nodeDatum }) => {
-    let fill = "#ffffff"; // White fill to match the screenshot
-    let textFill = "#000000"; // Black text to match the screenshot
-    let text = nodeDatum.name;
+    const nodeRadius = isMobile ? 20 : 20;
+    const textSize = isMobile ? 12 : 12;
+    
     return (
       <g>
-        <circle r={20} fill={fill} stroke="#ffffff" strokeWidth={2} />
-        <text x="0" y="0" fontSize={12} fill={textFill} textAnchor="middle" alignmentBaseline="middle">{text}</text>
+        <circle r={nodeRadius} fill="#ffffff" stroke="#10b981" strokeWidth={2} />
+        <text x="0" y="0" fontSize={textSize} fill="#000000" textAnchor="middle" alignmentBaseline="middle" fontWeight="bold">
+          {nodeDatum.name}
+        </text>
       </g>
     );
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-200 p-4">
-      <header className="bg-gray-800 p-4 shadow-md mb-4 rounded-xl flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-100">Binary Tree Visualizer</h1>
-          <p className="text-sm text-gray-400 mt-1">Trees where each node has at most two children, sorted by value.</p>
+    <div className="min-h-screen bg-gray-900 text-gray-200 p-2 sm:p-4">
+      <header className="bg-gray-800 p-3 sm:p-4 shadow-md mb-3 sm:mb-4 rounded-lg sm:rounded-xl flex items-center justify-center relative">
+        <button
+          onClick={() => navigate(-1)}
+          className="absolute left-2 sm:left-4 flex items-center gap-2 px-2 sm:px-3 py-2 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg border border-gray-600 transition text-xs sm:text-sm"
+        >
+          <span>←</span>
+          <span>Back</span>
+        </button>
+
+        <div className="text-center">
+          <h1 className="text-lg sm:text-2xl font-bold text-gray-100">Binary Tree</h1>
+          <p className="text-xs sm:text-sm text-gray-400 mt-1">Level-order insert visualization</p>
         </div>
-        <Link to="/tree-dsa" className="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-500 transition">
-          Back to Landing
-        </Link>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Left Panel */}
-        <div className="bg-gray-800 p-4 rounded-xl shadow-lg">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 auto-rows-max lg:auto-rows-auto">
+        <div className="bg-gray-800 p-3 sm:p-4 rounded-lg sm:rounded-xl shadow-lg lg:row-span-2">
           <input
             type="number"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            placeholder="Enter value to insert/delete"
-            className="p-2 rounded-lg border border-gray-700 bg-gray-900 text-gray-200 placeholder-gray-400 focus:ring-2 focus:ring-green-400 outline-none w-full mb-3"
+            placeholder="Enter value"
+            className="w-full p-2 sm:p-3 rounded-lg border border-gray-700 bg-gray-900 text-gray-200 placeholder-gray-400 focus:ring-2 focus:ring-green-400 outline-none mb-2 sm:mb-3 text-sm sm:text-base"
           />
 
-          <div className="flex gap-2 mb-3">
-            <button onClick={() => animateTree("insert", inputValue)} disabled={isAnimating || !inputValue} className="px-4 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-500 disabled:opacity-60 transition">
-              Insert Node
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-2 mb-2 sm:mb-3">
+            <button
+              onClick={() => animateTree("insert", inputValue)}
+              disabled={isAnimating || !inputValue}
+              className="flex-1 px-3 sm:px-4 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-500 disabled:opacity-60 transition text-sm sm:text-base"
+            >
+              Insert
             </button>
-            <button onClick={() => animateTree("delete", inputValue)} disabled={isAnimating || !inputValue} className="px-4 py-2 bg-red-600 text-white rounded-lg shadow hover:bg-red-500 disabled:opacity-60 transition">
-              Delete Node
+            <button
+              onClick={() => animateTree("delete", inputValue)}
+              disabled={isAnimating || !inputValue}
+              className="flex-1 px-3 sm:px-4 py-2 bg-red-600 text-white rounded-lg shadow hover:bg-red-500 disabled:opacity-60 transition text-sm sm:text-base"
+            >
+              Delete
             </button>
             <button
               onClick={() => {
@@ -175,14 +193,14 @@ function BinaryTree() {
                 setAlgorithmSteps([]);
                 setInputValue("");
               }}
-              className="px-4 py-2 bg-gray-600 text-white rounded-lg shadow hover:bg-gray-500 transition"
+              className="flex-1 px-3 sm:px-4 py-2 bg-gray-600 text-white rounded-lg shadow hover:bg-gray-500 transition text-sm sm:text-base"
             >
-              Clear Tree
+              Clear
             </button>
           </div>
 
-          <div className="flex items-center gap-2 mb-6">
-            <label className="text-sm text-gray-300">Animation Speed (ms):</label>
+          <div className="flex items-center gap-2 mb-3 sm:mb-6">
+            <label className="text-xs sm:text-sm text-gray-300">Speed:</label>
             <input
               type="range"
               min="500"
@@ -190,45 +208,46 @@ function BinaryTree() {
               step="100"
               value={animationSpeed}
               onChange={(e) => setAnimationSpeed(Number(e.target.value))}
-              className="w-32 accent-green-500"
+              className="flex-1 accent-green-500"
             />
-            <span className="text-gray-300">{animationSpeed}ms</span>
+            <span className="text-xs sm:text-sm text-gray-300 w-12 sm:w-14 text-right">{animationSpeed}</span>
           </div>
 
-          <div className="bg-gray-900 p-4 rounded-lg h-48 overflow-y-auto">
-            <h2 className="text-lg font-semibold mb-2 text-green-400">Algorithm Steps</h2>
+          <div className="bg-gray-900 p-3 sm:p-4 rounded-lg max-h-48 sm:max-h-64 overflow-y-auto border border-gray-700">
+            <h2 className="text-sm sm:text-lg font-semibold mb-2 text-green-400">Steps</h2>
             {algorithmSteps.length > 0 ? (
-              <ul className="list-disc pl-5 text-sm text-gray-200">
+              <ul className="list-disc pl-4 text-xs sm:text-sm text-gray-200 space-y-1">
                 {algorithmSteps.map((step, index) => (
-                  <li key={index} className="mb-1">
-                    {step}
-                  </li>
+                  <li key={index}>{step}</li>
                 ))}
-                <div ref={null} /> {/* Placeholder for stepsEndRef compatibility */}
               </ul>
             ) : (
-              <p className="text-gray-500">No steps to display. Perform an operation to see the algorithm steps.</p>
+              <p className="text-gray-500 text-xs">Perform an operation...</p>
             )}
           </div>
         </div>
 
-        {/* Tree Visualization */}
-        <div className="bg-gray-800 p-4 rounded-xl shadow-lg h-[60vh] overflow-hidden lg:col-span-2">
+        <div
+          className="bg-gray-800 p-3 sm:p-4 rounded-lg sm:rounded-xl shadow-lg overflow-hidden lg:col-span-2 min-h-96 sm:min-h-[60vh] border border-gray-700"
+          ref={treeContainerRef}
+        >
           {treeData ? (
             <Tree
               data={treeData}
               orientation="vertical"
-              translate={{ x: 240, y: 60 }}
+              translate={{ x: window.innerWidth / 2 / 2, y: 60 }}
               renderCustomNodeElement={(props) => <CustomNode {...props} />}
-              pathClassFunc={() => "stroke-white stroke-2"}
+              pathClassFunc={() => "stroke-green-500 stroke-2"}
               zoomable
               collapsible
+              separation={{ siblings: isMobile ? 1 : 1.5, nonSiblings: isMobile ? 1.5 : 2 }}
             />
           ) : (
-            <p className="text-gray-500 h-full grid place-items-center text-center">Enter values and use buttons to visualize the tree.</p>
+            <p className="text-gray-500 h-full grid place-items-center text-center text-sm sm:text-base px-4">
+              Enter values and use buttons to visualize the tree.
+            </p>
           )}
         </div>
-        <div className="hidden"></div>
       </div>
     </div>
   );

@@ -1,105 +1,142 @@
-import React, { useState, useEffect, useRef } from "react";
-import Navbar from "../../components/Navbar";
-import Footer from "../../components/Footer";
+// src/pages/dsa/BFSVisualization.jsx
+import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
-function BFSVisualization() {
+export default function BFSVisualization() {
+  // ---------- Graph state ----------
   const [graphType, setGraphType] = useState("directed");
   const [nodes, setNodes] = useState([0, 1, 2, 3, 4, 5, 6]);
   const [edges, setEdges] = useState([
-    [0, 1], [0, 2], [1, 3], [1, 4], [2, 5], [3, 6]
+    [0, 1],
+    [0, 2],
+    [1, 3],
+    [1, 4],
+    [2, 5],
+    [3, 6],
   ]);
   const [startVertex, setStartVertex] = useState(0);
   const [newNodeId, setNewNodeId] = useState(7);
   const [fromNode, setFromNode] = useState(0);
   const [toNode, setToNode] = useState(1);
+  const [removeFrom, setRemoveFrom] = useState(0);
+  const [removeTo, setRemoveTo] = useState(1);
 
+  // BFS + playback
   const [steps, setSteps] = useState([]);
-  const [currentStep, setCurrentStep] = useState(-1);
+  const [current, setCurrent] = useState(-1);
   const [isPlaying, setIsPlaying] = useState(false);
   const [speed, setSpeed] = useState(800);
 
-  const nodePositions = useRef({});
+  // positions & drag
+  const [positions, setPositions] = useState({});
+  const svgViewBox = useRef({ w: 1000, h: 700 });
+  const containerRef = useRef(null);
+  const draggingRef = useRef({ id: null, offsetX: 0, offsetY: 0 });
+  const pointerCapturedRef = useRef(false);
 
-  // Same layout as DFS: Start node on top
-  const updateNodePositions = () => {
-    const radius = 200;
-    const centerX = 300;
-    const centerY = 250;
+  // undo & removal
+  const [undoStack, setUndoStack] = useState([]);
+  const [removingNodes, setRemovingNodes] = useState(new Set());
+  const [arrowStyle, setArrowStyle] = useState("curved");
+  const timerRef = useRef(null);
+  const fileRef = useRef(null);
 
-    nodes.forEach((node, i) => {
-      const angle = (i / nodes.length) * 2 * Math.PI - Math.PI / 2;
-      nodePositions.current[node] = {
-        x: centerX + radius * Math.cos(angle),
-        y: centerY + radius * Math.sin(angle),
+  // ---------- Layout ----------
+  const updateAutoLayout = (useExistingManual = true) => {
+    const container = containerRef.current;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    const w = Math.max(700, rect.width);
+    const h = Math.max(450, rect.height);
+    svgViewBox.current = { w, h };
+    const cx = w / 2;
+    const cy = h / 2;
+    const radius = Math.min(w, h) * 0.36;
+    const target = {};
+
+    if (nodes.includes(startVertex)) {
+      target[startVertex] = { x: cx, y: 80 };
+    }
+    const other = nodes.filter((n) => n !== startVertex);
+    other.forEach((node, i) => {
+      const angle = (i / Math.max(1, other.length)) * Math.PI * 2 - Math.PI / 2;
+      target[node] = {
+        x: cx + radius * Math.cos(angle),
+        y: cy + radius * Math.sin(angle) + 30,
       };
     });
 
-    if (nodes.includes(startVertex)) {
-      nodePositions.current[startVertex] = { x: centerX, y: 70 };
-    }
+    setPositions((prev) => {
+      const next = { ...target };
+      Object.keys(prev).forEach((k) => {
+        if (useExistingManual && !removingNodes.has(Number(k)) && nodes.includes(Number(k))) {
+          next[k] = prev[k];
+        }
+      });
+      return next;
+    });
   };
 
   useEffect(() => {
-    updateNodePositions();
+    updateAutoLayout();
+    const onResize = () => updateAutoLayout();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
   }, [nodes, startVertex]);
 
+  // ---------- BFS ----------
   const buildAdjList = () => {
     const adj = {};
-    nodes.forEach(n => adj[n] = []);
+    nodes.forEach((n) => (adj[n] = []));
     edges.forEach(([u, v]) => {
       adj[u].push(v);
-      if (graphType === "undirected") adj[v].push(u);
+      if (graphType === "undirected") {
+        if (!adj[v].includes(u)) adj[v].push(u);
+      }
     });
     return adj;
   };
 
   const runBFS = () => {
+    if (!nodes.includes(startVertex)) return;
     setIsPlaying(false);
-    setCurrentStep(-1);
+    setCurrent(-1);
 
     const adj = buildAdjList();
-    const visited = {};
-    const parent = {};
+    const visited = Object.fromEntries(nodes.map((n) => [n, false]));
     const queue = [];
     const newSteps = [];
 
-    nodes.forEach(n => { visited[n] = false; parent[n] = null; });
-
     queue.push(startVertex);
     visited[startVertex] = true;
-    parent[startVertex] = -1;
-
     newSteps.push({
       queue: [...queue],
       visited: { ...visited },
-      parent: { ...parent },
-      current: null,
-      description: `Starting BFS from node ${startVertex}`
+      current: startVertex,
+      processing: null,
+      description: `Start BFS from node ${startVertex}`,
     });
 
     while (queue.length > 0) {
       const u = queue.shift();
-
       newSteps.push({
         queue: [...queue],
         visited: { ...visited },
-        parent: { ...parent },
         current: u,
-        description: `Dequeued node ${u} → exploring neighbors`
+        processing: u,
+        description: `Dequeue ${u} → exploring neighbors`,
       });
 
-      (adj[u] || []).forEach(v => {
+      (adj[u] || []).forEach((v) => {
         if (!visited[v]) {
-          queue.push(v);
           visited[v] = true;
-          parent[v] = u;
+          queue.push(v);
           newSteps.push({
             queue: [...queue],
             visited: { ...visited },
-            parent: { ...parent },
             current: u,
-            description: `Discovered ${v} → enqueued (level ${queue.includes(v) ? 'next' : 'current'})`
+            processing: v,
+            description: `Discovered node ${v} → enqueue it`,
           });
         }
       });
@@ -108,359 +145,388 @@ function BFSVisualization() {
     newSteps.push({
       queue: [],
       visited: { ...visited },
-      parent: { ...parent },
       current: null,
-      description: "BFS Completed!"
+      processing: null,
+      description: "BFS Completed!",
     });
 
     setSteps(newSteps);
-    setCurrentStep(0);
+    setCurrent(0);
   };
 
+  // playback
   useEffect(() => {
-    if (isPlaying && currentStep < steps.length - 1) {
-      const timer = setTimeout(() => setCurrentStep(prev => prev + 1), speed);
-      return () => clearTimeout(timer);
-    } else if (currentStep >= steps.length - 1) {
+    if (!isPlaying || current >= steps.length - 1) {
       setIsPlaying(false);
+      if (timerRef.current) clearInterval(timerRef.current);
+      return;
     }
-  }, [isPlaying, currentStep, steps.length, speed]);
+    timerRef.current = setInterval(() => {
+      setCurrent((c) => (c >= steps.length - 1 ? c : c + 1));
+    }, speed);
+    return () => clearInterval(timerRef.current);
+  }, [isPlaying, current, speed, steps.length]);
 
-  const currentState = steps[currentStep] || {
-    queue: [],
-    visited: Object.fromEntries(nodes.map(n => [n, false])),
-    parent: Object.fromEntries(nodes.map(n => [n, null])),
-    current: null,
-    description: "Click 'Run BFS' to begin visualization",
+  // ---------- Actions ----------
+  const pushUndo = () => {
+    setUndoStack((s) => [
+      ...s,
+      { nodes: [...nodes], edges: [...edges], positions: { ...positions }, startVertex },
+    ]);
   };
 
   const addNode = () => {
-    if (!nodes.includes(newNodeId)) {
-      setNodes(prev => [...prev, newNodeId]);
-      setNewNodeId(prev => prev + 1);
-    }
+    const id = Number(newNodeId);
+    if (isNaN(id) || nodes.includes(id)) return;
+    pushUndo();
+    setNodes((p) => [...p, id]);
+    setNewNodeId(id + 1);
+    setTimeout(() => updateAutoLayout(true), 100);
   };
 
   const addEdge = () => {
-    const exists = edges.some(([u, v]) => u === fromNode && v === toNode);
-    if (!exists && nodes.includes(fromNode) && nodes.includes(toNode)) {
-      setEdges(prev => [...prev, [fromNode, toNode]]);
+    if (fromNode === toNode || edges.some(([a, b]) => a === fromNode && b === toNode)) return;
+    pushUndo();
+    setEdges((p) => [...p, [fromNode, toNode]]);
+  };
+
+  const removeEdge = () => {
+    pushUndo();
+    setEdges((p) => p.filter(([a, b]) => !(a === removeFrom && b === removeTo)));
+  };
+
+  const handleEdgeClick = (u, v) => {
+    if (window.confirm(`Remove edge ${u} → ${v}?`)) {
+      pushUndo();
+      setEdges((p) => p.filter(([a, b]) => !(a === u && b === v)));
     }
   };
 
-  const drawGraph = () => {
-    return (
-      <svg className="w-full h-[520px] bg-gray-900 rounded-xl shadow-2xl" viewBox="0 0 600 520">
-        {/* Arrow Markers */}
-        <defs>
-          <marker
-            id="arrowhead"
-            markerWidth="12"
-            markerHeight="12"
-            refX="26"
-            refY="6"
-            orient="auto"
-            markerUnits="strokeWidth"
-          >
-            <path d="M0,0 L0,12 L18,6 z" fill="#60a5fa" />
-          </marker>
-          <marker
-            id="arrowhead-active"
-            markerWidth="12"
-            markerHeight="12"
-            refX="26"
-            refY="6"
-            orient="auto"
-            markerUnits="strokeWidth"
-          >
-            <path d="M0,0 L0,12 L18,6 z" fill="#38bdf8" />
-          </marker>
-        </defs>
-
-        {/* Edges */}
-        {edges.map(([u, v], i) => {
-          const pu = nodePositions.current[u] || { x: 300, y: 250 };
-          const pv = nodePositions.current[v] || { x: 300, y: 250 };
-
-          const isTreeEdge = currentState.parent[v] === u || (graphType === "undirected" && currentState.parent[u] === v);
-          const isVisitedBoth = currentState.visited[u] && currentState.visited[v];
-
-          const strokeColor = isTreeEdge ? "#38bdf8" : isVisitedBoth ? "#6ee7b7" : "#4b5563";
-          const strokeWidth = isTreeEdge ? 4 : 2;
-          const marker = isTreeEdge ? "url(#arrowhead-active)" : "url(#arrowhead)";
-
-          if (graphType === "undirected") {
-            return (
-              <line
-                key={i}
-                x1={pu.x} y1={pu.y}
-                x2={pv.x} y2={pv.y}
-                stroke={strokeColor}
-                strokeWidth={strokeWidth}
-                opacity={isVisitedBoth || isTreeEdge ? 1 : 0.5}
-              />
-            );
-          }
-
-          return (
-            <line
-              key={i}
-              x1={pu.x} y1={pu.y}
-              x2={pv.x} y2={pv.y}
-              stroke={strokeColor}
-              strokeWidth={strokeWidth}
-              markerEnd={graphType === "directed" ? marker : ""}
-              opacity={isVisitedBoth || isTreeEdge ? 1 : 0.6}
-            />
-          );
-        })}
-
-        {/* Nodes */}
-        {nodes.map(n => {
-          const pos = nodePositions.current[n] || { x: 300, y: 250 };
-          const isCurrent = currentState.current === n;
-          const isVisited = currentState.visited[n];
-
-          return (
-            <g key={n}>
-              <circle
-                cx={pos.x}
-                cy={pos.y}
-                r="32"
-                fill={isCurrent ? "#f59e0b" : isVisited ? "#34d399" : "#1f2937"}
-                stroke={isCurrent ? "#ea580c" : isVisited ? "#10b981" : "#6b7280"}
-                strokeWidth={isCurrent ? 6 : 4}
-                className="transition-all duration-300"
-              />
-              <text
-                x={pos.x}
-                y={pos.y + 8}
-                textAnchor="middle"
-                fontSize="20"
-                fontWeight="bold"
-                fill="white"
-              >
-                {n}
-              </text>
-            </g>
-          );
-        })}
-      </svg>
-    );
+  const handleNodeClick = (nodeId) => {
+    if (!window.confirm(`Delete node ${nodeId}?`)) return;
+    pushUndo();
+    setRemovingNodes((s) => new Set([...s, nodeId]));
+    setTimeout(() => {
+      setNodes((p) => p.filter((n) => n !== nodeId));
+      setEdges((p) => p.filter(([u, v]) => u !== nodeId && v !== nodeId));
+      setPositions((p) => {
+        const np = { ...p };
+        delete np[nodeId];
+        return np;
+      });
+      setRemovingNodes((s) => {
+        const ns = new Set(s);
+        ns.delete(nodeId);
+        return ns;
+      });
+      setTimeout(() => updateAutoLayout(true), 50);
+    }, 420);
   };
 
+  // drag handlers
+  const onPointerDownNode = (e, nodeId) => {
+    e.preventDefault();
+    const rect = containerRef.current.getBoundingClientRect();
+    const px = e.clientX ?? e.touches[0].clientX;
+    const py = e.clientY ?? e.touches[0].clientY;
+    const pos = positions[nodeId];
+    const scaleX = svgViewBox.current.w / rect.width;
+    const scaleY = svgViewBox.current.h / rect.height;
+    draggingRef.current = {
+      id: nodeId,
+      offsetX: (px - rect.left) * scaleX - pos.x,
+      offsetY: (py - rect.top) * scaleY - pos.y,
+    };
+    pointerCapturedRef.current = true;
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerUp);
+  };
+
+  const onPointerMove = (ev) => {
+    if (!pointerCapturedRef.current || !draggingRef.current.id) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const scaleX = svgViewBox.current.w / rect.width;
+    const scaleY = svgViewBox.current.h / rect.height;
+    const nx = (ev.clientX - rect.left) * scaleX - draggingRef.current.offsetX;
+    const ny = (ev.clientY - rect.top) * scaleY - draggingRef.current.offsetY;
+    setPositions((p) => ({ ...p, [draggingRef.current.id]: { x: nx, y: ny } }));
+  };
+
+  const onPointerUp = () => {
+    if (draggingRef.current.id) pushUndo();
+    pointerCapturedRef.current = false;
+    draggingRef.current = { id: null, offsetX: 0, offsetY: 0 };
+    window.removeEventListener("pointermove", onPointerMove);
+    window.removeEventListener("pointerup", onPointerUp);
+  };
+
+  const handleExport = () => {
+    const data = { nodes, edges, positions, startVertex, graphType };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "bfs-graph.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImport = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        pushUndo();
+        setNodes(data.nodes || []);
+        setEdges(data.edges || []);
+        setPositions(data.positions || {});
+        setStartVertex(data.startVertex ?? 0);
+        setGraphType(data.graphType || "directed");
+        setTimeout(() => updateAutoLayout(false), 100);
+      } catch (err) {
+        alert("Invalid file");
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  };
+
+  // ---------- Render ----------
+  const stepState = steps[current] || {
+    queue: [],
+    visited: Object.fromEntries(nodes.map((n) => [n, false])),
+    current: null,
+    processing: null,
+    description: "Click 'Run BFS' to begin visualization",
+  };
+  const visitedList = Object.keys(stepState.visited || {}).filter((k) => stepState.visited[k]);
+
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-100 flex flex-col">
-      <Navbar />
-
+    <div className="min-h-screen bg-gray-950 text-gray-100">
       {/* Header */}
-      <div className="w-full bg-gradient-to-r from-purple-900 via-blue-900 to-indigo-900 shadow-2xl">
-        <div className="max-w-7xl mx-auto px-6 py-8 flex items-center justify-between">
-          <h1 className="text-4xl md:text-5xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-pink-400 to-blue-400">
-            Breadth-First Search (BFS) Visualization
-          </h1>
-          <div className="absolute left-6">
-            <Link
-  to="/graph-dsa"
-  className="group flex items-center gap-3 px-7 py-4 bg-white/10 hover:bg-white/20 
-             backdrop-blur-md border border-white/20 rounded-2xl font-bold text-lg
-             transition-all duration-300 hover:scale-105 hover:shadow-2xl
-             hover:border-white/40"
->
-  {/* Left Arrow Icon using pure Tailwind + SVG */}
-  <svg
-    className="w-6 h-6 text-cyan-400 group-hover:-translate-x-1 transition-transform duration-300"
-    fill="none"
-    stroke="currentColor"
-    viewBox="0 0 24 24"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2.5}
-      d="M15 19l-7-7 7-7"
-    />
-  </svg>
-
-  {/* Text with nice gradient 
-  <span className="bg-gradient-to-r from-cyan-400 via-blue-400 to-pink-400 
-                   bg-clip-text text-transparent">
-    left most side
-  </span> */}
-</Link> 
+      <header className="sticky top-0 z-50 bg-gray-900/95 backdrop-blur border-b border-gray-800 shadow">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-cyan-400">
+              BFS Visualizer
+            </h1>
+            <p className="text-sm text-gray-400 mt-1">Drag nodes • Animated remove • Undo • Import/Export</p>
           </div>
-        </div>
-      </div>
-
-      <main className="flex-1 max-w-7xl mx-auto px-6 py-10">
-        {/* Controls Panel */}
-        <div className="bg-gray-900/80 backdrop-blur border border-gray-800 rounded-2xl shadow-2xl p-8 mb-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div>
-              <h3 className="text-2xl font-bold text-pink-400 mb-4">Graph Settings</h3>
-              <div className="space-y-5">
-                <div className="flex items-center gap-4">
-                  <span className="font-medium text-gray-300">Type:</span>
-                  <select
-                    value={graphType}
-                    onChange={(e) => setGraphType(e.target.value)}
-                    className="bg-gray-800 border border-gray-700 text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-pink-500"
-                  >
-                    <option value="directed">Directed</option>
-                    <option value="undirected">Undirected</option>
-                  </select>
-                </div>
-
-                <div className="flex items-center gap-4">
-                  <span className="font-medium text-gray-300">Start Node:</span>
-                  <select
-                    value={startVertex}
-                    onChange={(e) => setStartVertex(Number(e.target.value))}
-                    className="bg-gray-800 border border-gray-700 text-white rounded-lg px-4 py-3"
-                  >
-                    {nodes.map(n => <option key={n} value={n}>{n}</option>)}
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <h3 className="text-2xl font-bold text-cyan-400 mb-4">Add Elements</h3>
-              <div className="space-y-4">
-                <div className="flex gap-3">
-                  <input
-                    type="number"
-                    value={newNodeId}
-                    onChange={(e) => setNewNodeId(Number(e.target.value))}
-                    className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 w-24 text-white"
-                  />
-                  <button onClick={addNode} className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 px-5 py-3 rounded-lg font-bold transition">
-                    Add Node
-                  </button>
-                </div>
-
-                <div className="flex gap-2 items-center">
-                  <select value={fromNode} onChange={(e) => setFromNode(Number(e.target.value))} className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-3">
-                    {nodes.map(n => <option key={n}>{n}</option>)}
-                  </select>
-                  <span className="text-2xl text-pink-400">→</span>
-                  <select value={toNode} onChange={(e) => setToNode(Number(e.target.value))} className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-3">
-                    {nodes.map(n => <option key={n}>{n}</option>)}
-                  </select>
-                  <button onClick={addEdge} className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 px-5 py-3 rounded-lg font-bold transition">
-                    Add Edge
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <h3 className="text-2xl font-bold text-yellow-400 mb-4">Current Graph</h3>
-              <div className="text-sm space-y-2">
-                <p><strong className="text-pink-400">Nodes:</strong> {nodes.join(", ")}</p>
-                <p><strong className="text-cyan-400">Edges:</strong> {edges.map(([u, v]) => `${u}→${v}`).join(", ")}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Run Button */}
-        <div className="text-center mb-10">
-          <button
-            onClick={runBFS}
-            className="bg-gradient-to-r from-pink-600 via-purple-600 to-blue-600 hover:from-pink-500 hover:via-purple-500 hover:to-blue-500 text-white text-2xl font-bold px-16 py-6 rounded-2xl shadow-2xl transform hover:scale-105 transition duration-300">
-            Run BFS Visualization
-          </button>
-        </div>
-
-        {/* Main Visualization */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-          <div className="xl:col-span-2 space-y-8">
-            <div className="bg-gray-900/90 backdrop-blur border border-gray-800 rounded-2xl shadow-2xl p-6">
-              <h3 className="text-3xl font-bold text-center mb-6 bg-gradient-to-r from-cyan-400 to-yellow-400 bg-clip-text text-transparent">
-                Graph Visualization
-              </h3>
-              <div className="flex justify-center">
-                {drawGraph()}
-              </div>
-            </div>
-
-            {/* Description */}
-            <div className="bg-gradient-to-r from-purple-900/80 to-blue-900/80 backdrop-blur border border-purple-700 rounded-2xl p-8 shadow-2xl">
-              <h3 className="text-2xl font-bold text-pink-300 mb-3">Current Action:</h3>
-              <p className="text-xl text-gray-100 leading-relaxed">{currentState.description}</p>
-            </div>
-          </div>
-
-          {/* Side Panel */}
-          <div className="space-y-6">
-            <div className="bg-gray-900/80 backdrop-blur border border-gray-800 rounded-2xl p-6 shadow-2xl">
-              <h3 className="text-xl font-bold text-cyan-400 mb-4">BFS Queue (Front → Rear)</h3>
-              <div className="bg-black/40 rounded-lg p-4 font-mono text-lg min-h-[150px] border border-gray-700">
-                {currentState.queue.length > 0 ? (
-                  currentState.queue.map((n, i) => (
-                    <div key={i} className={`py-2 ${i === 0 ? "text-pink-400 font-bold" : "text-gray-300"}`}>
-                      {i === 0 && "← Front "} {n}
-                    </div>
-                  ))
-                ) : (
-                  <span className="text-gray-600">Queue is empty</span>
-                )}
-              </div>
-            </div>
-
-            <div className="bg-gray-900/80 backdrop-blur border border-gray-800 rounded-2xl p-6 shadow-2xl">
-              <h3 className="text-xl font-bold text-green-400 mb-4">Parent Table</h3>
-              <table className="w-full text-sm">
-                {nodes.map(n => (
-                  <tr key={n} className="border-b border-gray-800">
-                    <td className="py-3 font-mono text-cyan-400">{n}</td>
-                    <td className="py-3 text-right font-mono text-gray-300">
-                      {currentState.parent[n] === -1 ? "root" : currentState.parent[n] ?? "—"}
-                    </td>
-                  </tr>
-                ))}
-              </table>
-            </div>
-          </div>
-        </div>
-
-        {/* Playback Controls */}
-        {steps.length > 0 && (
-          <div className="mt-12 bg-gray-900/90 backdrop-blur border border-gray-800 rounded-2xl p-8 shadow-2xl flex flex-wrap items-center justify-center gap-6">
-            <button onClick={() => setCurrentStep(0)} className="bg-gray-700 hover:bg-gray-600 px-6 py-4 rounded-xl font-bold">First</button>
-            <button onClick={() => setCurrentStep(Math.max(0, currentStep - 1))} className="bg-gray-700 hover:bg-gray-600 px-6 py-4 rounded-xl font-bold">Prev</button>
-            
-            <button
-              onClick={() => setIsPlaying(!isPlaying)}
-              className={`px-12 py-5 rounded-xl font-bold text-xl transition ${isPlaying ? "bg-red-600 hover:bg-red-700" : "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500"}`}
-            >
-              {isPlaying ? "Pause" : "Play"}
+          <div className="flex items-center gap-3">
+            <label className="text-sm text-gray-300">Arrows:</label>
+            <select value={arrowStyle} onChange={(e) => setArrowStyle(e.target.value)} className="bg-gray-900 px-3 py-2 rounded">
+              <option value="curved">Curved</option>
+              <option value="straight">Straight</option>
+            </select>
+            <button onClick={handleExport} className="px-3 py-2 bg-indigo-600 rounded">Export</button>
+            <button onClick={() => fileRef.current?.click()} className="px-3 py-2 bg-indigo-500 rounded">Import</button>
+            <input ref={fileRef} type="file" accept=".json" className="hidden" onChange={handleImport} />
+            <button onClick={() => setUndoStack((s) => s.slice(0, -1))} disabled={undoStack.length === 0} className="px-3 py-2 bg-gray-700 rounded disabled:opacity-50">
+              Undo
             </button>
+            <Link to="/graph-dsa" className="px-3 py-2 bg-blue-600 hover:bg-blue-500 rounded">Back</Link>
+          </div>
+        </div>
+      </header>
 
-            <button onClick={() => setCurrentStep(Math.min(steps.length - 1, currentStep + 1))} className="bg-gray-700 hover:bg-gray-600 px-6 py-4 rounded-xl font-bold">Next</button>
-            <button onClick={() => setCurrentStep(steps.length - 1)} className="bg-gray-700 hover:bg-gray-600 px-6 py-4 rounded-xl font-bold">Last</button>
-
-            <div className="flex items-center gap-4">
-              <span className="text-gray-400">Speed:</span>
-              <input
-                type="range"
-                min="100"
-                max="3000"
-                step="100"
-                value={speed}
-                onChange={(e) => setSpeed(Number(e.target.value))}
-                className="w-48 accent-pink-500"
-              />
-              <span className="text-sm text-gray-400 w-20">{speed}ms</span>
+      <main className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+        {/* Top Controls */}
+        <section className="bg-gray-800/80 border border-gray-700 rounded-2xl p-6 shadow mb-6">
+          <div className="flex flex-wrap items-end gap-6">
+            <div className="min-w-[160px] flex-1">
+              <label className="block text-emerald-400 font-semibold mb-1">Graph Type</label>
+              <select value={graphType} onChange={(e) => setGraphType(e.target.value)} className="w-full bg-gray-900 px-3 py-2 rounded">
+                <option value="directed">Directed</option>
+                <option value="undirected">Undirected</option>
+              </select>
+            </div>
+            <div className="min-w-[160px] flex-1">
+              <label className="block text-cyan-400 font-semibold mb-1">Start Node</label>
+              <select value={startVertex} onChange={(e) => setStartVertex(Number(e.target.value))} className="w-full bg-gray-900 px-3 py-2 rounded">
+                {nodes.map((n) => <option key={n} value={n}>Node {n}</option>)}
+              </select>
+            </div>
+            <div className="flex items-end gap-2">
+              <div>
+                <label className="block text-green-400 font-semibold mb-1">Add Node (ID)</label>
+                <input type="number" value={newNodeId} onChange={(e) => setNewNodeId(Number(e.target.value))} className="w-24 bg-gray-900 px-3 py-2 rounded text-center" />
+              </div>
+              <button onClick={addNode} className="px-3 py-2 bg-green-600 rounded">Add</button>
+            </div>
+            <div className="ml-auto flex items-end gap-2">
+              <select value={fromNode} onChange={(e) => setFromNode(Number(e.target.value))} className="bg-gray-900 px-2 py-2 rounded">
+                {nodes.map((n) => <option key={`f${n}`} value={n}>{n}</option>)}
+              </select>
+              <span className="text-pink-400 text-xl">→</span>
+              <select value={toNode} onChange={(e) => setToNode(Number(e.target.value))} className="bg-gray-900 px-2 py-2 rounded">
+                {nodes.map((n) => <option key={`t${n}`} value={n}>{n}</option>)}
+              </select>
+              <button onClick={addEdge} className="px-3 py-2 bg-purple-600 rounded">+</button>
             </div>
           </div>
-        )}
-      </main>
+          <div className="mt-4 flex items-center gap-3">
+            <span className="text-red-400 font-semibold">Remove Edge</span>
+            <select value={removeFrom} onChange={(e) => setRemoveFrom(Number(e.target.value))} className="bg-gray-900 px-2 py-2 rounded">
+              {nodes.map((n) => <option key={`rf${n}`} value={n}>{n}</option>)}
+            </select>
+            <span className="text-red-400 text-xl">→</span>
+            <select value={removeTo} onChange={(e) => setRemoveTo(Number(e.target.value))} className="bg-gray-900 px-2 py-2 rounded">
+              {nodes.map((n) => <option key={`rt${n}`} value={n}>{n}</option>)}
+            </select>
+            <button onClick={removeEdge} className="px-3 py-2 bg-red-600 rounded">Remove Edge</button>
+            <div className="ml-auto">
+              <button onClick={runBFS} className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-full font-bold">Run BFS</button>
+            </div>
+          </div>
+        </section>
 
-      <Footer />
+        {/* Main Layout */}
+        <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Graph */}
+          <div className="lg:col-span-2">
+            <div className="bg-gray-800/90 border border-gray-700 rounded-2xl p-4 shadow">
+              <h3 className="text-lg font-semibold text-center text-emerald-300 mb-2">Graph Visualization</h3>
+              <p className="text-xs text-gray-400 text-center mb-4">Drag nodes • Click node to delete • Click edge to delete</p>
+              <div ref={containerRef} className="w-full h-[60vh] sm:h-[70vh] bg-gray-900 rounded-xl overflow-hidden border border-gray-700">
+                <svg className="w-full h-full" viewBox={`0 0 ${svgViewBox.current.w} ${svgViewBox.current.h}`} preserveAspectRatio="xMidYMid meet">
+                  <defs>
+                    <marker id="arrow" markerWidth="10" markerHeight="10" refX="28" refY="5" orient="auto">
+                      <path d="M0,0 L0,10 L10,5 z" fill="#60a5fa" />
+                    </marker>
+                    <marker id="arrow-active" markerWidth="14" markerHeight="14" refX="34" refY="7" orient="auto">
+                      <path d="M0,0 L0,14 L14,7 z" fill="#ec4899" />
+                    </marker>
+                  </defs>
+
+                  {/* Edges */}
+                  {edges.map(([u, v], idx) => {
+                    const p1 = positions[u] || { x: 500, y: 350 };
+                    const p2 = positions[v] || { x: 500, y: 350 };
+                    if (arrowStyle === "straight") {
+                      return (
+                        <g key={`e-${idx}`}>
+                          <line x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} stroke="#6b7280" strokeWidth={3} markerEnd="url(#arrow)" onClick={() => handleEdgeClick(u, v)} style={{ cursor: "pointer" }} />
+                          <line x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} stroke="transparent" strokeWidth={20} onClick={() => handleEdgeClick(u, v)} />
+                        </g>
+                      );
+                    }
+                    const mx = (p1.x + p2.x) / 2;
+                    const my = Math.min(p1.y, p2.y) - 40;
+                    const d = `M ${p1.x} ${p1.y} Q ${mx} ${my} ${p2.x} ${p2.y}`;
+                    return (
+                      <g key={`e-${idx}`}>
+                        <path d={d} fill="none" stroke="#6b7280" strokeWidth={3} markerEnd="url(#arrow)" onClick={() => handleEdgeClick(u, v)} style={{ cursor: "pointer" }} />
+                        <path d={d} fill="none" stroke="transparent" strokeWidth={22} onClick={() => handleEdgeClick(u, v)} />
+                      </g>
+                    );
+                  })}
+
+                  {/* Nodes */}
+                  {nodes.map((n) => {
+                    const pos = positions[n] || { x: 500, y: 350 };
+                    const isRemoving = removingNodes.has(n);
+                    const isCurrent = stepState.current === n;
+                    const isProcessing = stepState.processing === n;
+                    const isVisited = stepState.visited?.[n];
+                    const inQueue = stepState.queue?.includes(n);
+                    const fillColor = isCurrent ? "#ec4899" : isProcessing ? "#f59e0b" : isVisited ? "#10b981" : inQueue ? "#3b82f6" : "#0f1724";
+
+                    return (
+                      <g
+                        key={`n-${n}`}
+                        transform={`translate(${pos.x}, ${pos.y})`}
+                        onPointerDown={(e) => onPointerDownNode(e, n)}
+                        onClick={(e) => { if (!draggingRef.current.id && !(e.metaKey || e.ctrlKey)) handleNodeClick(n); }}
+                        style={{ cursor: "grab", transition: "transform 420ms ease, opacity 420ms ease", opacity: isRemoving ? 0 : 1 }}
+                      >
+                        {(isCurrent || isProcessing) && <circle r={56} fill="none" stroke="#10b981" strokeWidth={8} opacity={0.12} />}
+                        <circle r={38} fill={fillColor} stroke={isCurrent || isProcessing ? "#fff" : "#374151"} strokeWidth={isCurrent || isProcessing ? 4 : 3} />
+                        <text y={6} textAnchor="middle" fontSize={16} fontWeight={700} fill="#fff">{n}</text>
+                      </g>
+                    );
+                  })}
+                </svg>
+              </div>
+              <div className="mt-4 p-3 rounded bg-gradient-to-r from-purple-900/40 to-pink-900/40 border border-purple-700 text-center">
+                <p className="text-sm text-gray-100">{stepState.description}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Sidebar */}
+          <aside className="space-y-4">
+            {/* Queue */}
+            <div className="bg-gray-800/90 border border-gray-700 rounded-2xl p-4">
+              <h4 className="text-lg text-emerald-400 font-semibold">Queue</h4>
+              <div className="mt-3 flex gap-2 flex-wrap">
+                {stepState.queue?.length > 0 ? stepState.queue.map((q) => <span key={q} className="px-3 py-1 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 font-bold">{q}</span>) : <div className="text-gray-400 italic">Empty</div>}
+              </div>
+            </div>
+
+            {/* Stats */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-gray-800/90 border border-gray-700 rounded-xl p-3 text-center">
+                <p className="text-sm text-gray-400">Visited</p>
+                <p className="text-2xl font-bold text-emerald-400">{visitedList.length}</p>
+              </div>
+              <div className="bg-gray-800/90 border border-gray-700 rounded-xl p-3 text-center">
+                <p className="text-sm text-gray-400">Edges</p>
+                <p className="text-2xl font-bold text-cyan-400">{edges.length}</p>
+              </div>
+            </div>
+
+            {/* Speed */}
+            <div className="bg-gray-800/90 border border-gray-700 rounded-xl p-3">
+              <label className="text-sm text-pink-400 font-semibold">Animation Speed</label>
+              <input type="range" min="200" max="2000" step="100" value={speed} onChange={(e) => setSpeed(Number(e.target.value))} className="mt-2 w-full accent-pink-500" />
+              <p className="text-xs text-gray-300 mt-2 text-center">{speed} ms</p>
+            </div>
+
+            {/* PLAYBACK CONTROLS — ONLY THIS IS CHANGED TO MATCH YOUR IMAGE */}
+            {steps.length > 0 && (
+              <div className="bg-gray-800/90 border border-gray-700 rounded-2xl p-5 shadow-xl">
+                <div className="flex items-center justify-center gap-3 mb-4">
+                  <button onClick={() => setCurrent(0)} className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium transition">
+                    First
+                  </button>
+                  <button onClick={() => setCurrent(c => Math.max(0, c - 1))} className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium transition">
+                    Prev
+                  </button>
+                  <button
+                    onClick={() => setIsPlaying(p => !p)}
+                    className={`px-10 py-3 rounded-lg font-bold text-white transition-all transform hover:scale-105 shadow-lg ${
+                      isPlaying ? "bg-red-600 hover:bg-red-500" : "bg-emerald-600 hover:bg-emerald-500"
+                    }`}
+                  >
+                    {isPlaying ? "Pause" : "Play"}
+                  </button>
+                  <button onClick={() => setCurrent(c => Math.min(steps.length - 1, c + 1))} className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium transition">
+                    Next
+                  </button>
+                  <button onClick={() => setCurrent(steps.length - 1)} className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium transition">
+                    Last
+                  </button>
+                </div>
+                <div className="text-center text-gray-400 text-sm font-medium">
+                  Step <span className="text-cyan-400 font-bold">{current + 1}</span> / {steps.length}
+                </div>
+              </div>
+            )}
+
+            {/* Algorithm Step */}
+            <div className="bg-gray-800/90 border border-gray-700 rounded-2xl p-4">
+              <h4 className="text-lg text-cyan-400 font-semibold mb-2">Algorithm Step {current + 1 > 0 ? current + 1 : 0}</h4>
+              <p className="text-sm text-gray-200 mb-3">{stepState.description}</p>
+              <div className="text-sm text-gray-300 space-y-2">
+                <div><span className="text-gray-400">Queue:</span> <code className="ml-2 text-emerald-300">[{(stepState.queue || []).join(", ") || "empty"}]</code></div>
+                <div><span className="text-gray-400">Visited:</span> <code className="ml-2 text-yellow-300">[{visitedList.join(", ") || "none"}]</code></div>
+              </div>
+            </div>
+          </aside>
+        </section>
+      </main>
     </div>
   );
 }
-
-export default BFSVisualization;

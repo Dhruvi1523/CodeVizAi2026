@@ -1,11 +1,10 @@
 // ConnectedComponents.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
-import { Link } from "react-router-dom";
 
 const ConnectedComponents = () => {
-  // Initialize with your example: nodes 0-4, components {0,1,2} and {3,4}
   const [nodes, setNodes] = useState([0, 1, 2, 3, 4]);
   const [edges, setEdges] = useState([
     // Component 1: 0, 1, 2 fully connected
@@ -22,13 +21,25 @@ const ConnectedComponents = () => {
   const [currentStep, setCurrentStep] = useState(-1);
   const [isPlaying, setIsPlaying] = useState(false);
   const [speed, setSpeed] = useState(1000);
+  const [isMobile, setIsMobile] = useState(false);
+
+  const containerRef = useRef(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 1024);
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // Compute positions in a perfect circle
   const getPositions = () => {
     const positions = {};
-    const radius = 220;
-    const cx = 350;
-    const cy = 270;
+    const radius = isMobile ? 120 : 180;
+    const cx = isMobile ? 200 : 300;
+    const cy = isMobile ? 200 : 250;
+    
     nodes.forEach((node, i) => {
       const angle = (i / nodes.length) * 2 * Math.PI - Math.PI / 2;
       positions[node] = {
@@ -224,146 +235,104 @@ const ConnectedComponents = () => {
       .sort((a, b) => a.id - b.id);
   };
 
+  const nodeRadius = isMobile ? 20 : 28;
+  const svgWidth = isMobile ? 400 : 600;
+  const svgHeight = isMobile ? 400 : 520;
+
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100 flex flex-col">
       <Navbar />
 
       <div className="w-full bg-gradient-to-r from-purple-900 via-blue-900 to-indigo-900 shadow-2xl">
-        <div className="max-w-7xl mx-auto px-6 py-8 flex justify-between items-center">
-          <h1 className="text-4xl md:text-5xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-amber-400 to-pink-400">
-            Connected Components
-          </h1>
-          <div className="absolute left-6">
-          <Link
-  to="/graph-dsa"
-  className="group flex items-center gap-3 px-7 py-4 bg-white/10 hover:bg-white/20 
-             backdrop-blur-md border border-white/20 rounded-2xl font-bold text-lg
-             transition-all duration-300 hover:scale-105 hover:shadow-2xl
-             hover:border-white/40"
->
-  {/* Left Arrow Icon using pure Tailwind + SVG */}
-  <svg
-    className="w-6 h-6 text-cyan-400 group-hover:-translate-x-1 transition-transform duration-300"
-    fill="none"
-    stroke="currentColor"
-    viewBox="0 0 24 24"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2.5}
-      d="M15 19l-7-7 7-7"
-    />
-  </svg>
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-6 sm:py-8 flex items-center justify-center relative">
+          <button
+            onClick={() => navigate(-1)}
+            className="absolute left-2 sm:left-4 flex items-center gap-2 px-2 sm:px-3 py-2 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg border border-gray-600 transition text-xs sm:text-sm"
+          >
+            <span>←</span>
+            <span>Back</span>
+          </button>
 
-  {/* Text with nice gradient 
-  <span className="bg-gradient-to-r from-cyan-400 via-blue-400 to-pink-400 
-                   bg-clip-text text-transparent">
-    left most side
-  </span> */}
-</Link>
- </div>
+          <div className="text-center">
+            <h1 className="text-lg sm:text-3xl md:text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-amber-400 to-pink-400">
+              Connected Components
+            </h1>
+            <p className="text-xs sm:text-sm text-gray-400 mt-1">Find all connected components in a graph</p>
+          </div>
         </div>
       </div>
 
-      <main className="flex-1 max-w-7xl mx-auto px-6 py-10">
-
+      <main className="flex-1 max-w-7xl mx-auto w-full px-2 sm:px-6 py-4 sm:py-10">
         {/* Controls */}
-        <div className="bg-gray-900/80 backdrop-blur border border-gray-800 rounded-2xl p-8 mb-8 shadow-2xl">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="bg-gray-900/80 backdrop-blur border border-gray-800 rounded-lg sm:rounded-2xl shadow-2xl p-3 sm:p-6 mb-4 sm:mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
             <div>
-              <h3 className="text-2xl font-bold text-pink-400 mb-4">Add Node</h3>
-              <div className="flex gap-3">
+              <h3 className="text-xs sm:text-lg font-bold text-pink-400 mb-2">Add Node</h3>
+              <div className="flex gap-2">
                 <input
                   type="number"
                   value={newNodeId}
                   onChange={(e) => setNewNodeId(Number(e.target.value))}
-                  className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 w-28 text-white"
+                  className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-2 sm:px-3 py-2 text-white text-xs sm:text-sm"
                 />
-                <button onClick={addNode} className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 px-6 py-3 rounded-lg font-bold">
-                  Add Node
+                <button onClick={addNode} className="bg-cyan-600 hover:bg-cyan-500 px-2 sm:px-4 py-2 rounded-lg font-bold text-xs sm:text-sm transition">
+                  Add
                 </button>
               </div>
             </div>
 
             <div>
-              <h3 className="text-2xl font-bold text-cyan-400 mb-4">Add Edge</h3>
-              <div className="flex items-center gap-3 flex-wrap">
-                <select 
-                  value={fromNode} 
-                  onChange={(e) => setFromNode(Number(e.target.value))} 
-                  className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-3"
-                >
-                  {nodes.map(n => <option key={n} value={n}>{n}</option>)}
+              <h3 className="text-xs sm:text-lg font-bold text-cyan-400 mb-2">Add Edge</h3>
+              <div className="flex gap-1 sm:gap-2">
+                <select value={fromNode} onChange={(e) => setFromNode(Number(e.target.value))}
+                  className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-2 py-2 text-white text-xs sm:text-sm">
+                  {nodes.map(n => <option key={n}>{n}</option>)}
                 </select>
-                <span className="text-3xl text-pink-400">↔</span>
-                <select 
-                  value={toNode} 
-                  onChange={(e) => setToNode(Number(e.target.value))} 
-                  className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-3"
-                >
-                  {nodes.map(n => <option key={n} value={n}>{n}</option>)}
+                <span className="text-pink-400 text-lg">↔</span>
+                <select value={toNode} onChange={(e) => setToNode(Number(e.target.value))}
+                  className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-2 py-2 text-white text-xs sm:text-sm">
+                  {nodes.map(n => <option key={n}>{n}</option>)}
                 </select>
-                <button 
-                  onClick={addEdge} 
-                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 px-6 py-3 rounded-lg font-bold"
-                >
+                <button onClick={addEdge} className="bg-purple-600 hover:bg-purple-500 px-2 sm:px-4 py-2 rounded-lg font-bold text-xs sm:text-sm transition">
                   Add
                 </button>
               </div>
             </div>
 
             <div className="flex flex-col gap-2">
-              <button
-                onClick={loadExample}
-                className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 px-4 py-3 rounded-lg font-bold text-sm"
-              >
-                Example Graph
+              <button onClick={loadExample} className="bg-green-600 hover:bg-green-500 px-3 py-2 rounded-lg font-bold text-xs sm:text-sm transition">
+                Example
               </button>
-              <button
-                onClick={loadEmptyExample}
-                className="bg-gradient-to-r from-gray-600 to-gray-500 hover:from-gray-500 hover:to-gray-400 px-4 py-3 rounded-lg font-bold text-sm"
-              >
-                Empty Graph
+              <button onClick={loadEmptyExample} className="bg-gray-600 hover:bg-gray-500 px-3 py-2 rounded-lg font-bold text-xs sm:text-sm transition">
+                Empty
               </button>
-              <button
-                onClick={clearGraph}
-                className="bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 px-4 py-3 rounded-lg font-bold text-sm"
-              >
-                Clear Edges
+              <button onClick={clearGraph} className="bg-red-600 hover:bg-red-500 px-3 py-2 rounded-lg font-bold text-xs sm:text-sm transition">
+                Clear
               </button>
             </div>
 
-            <div className="text-sm space-y-1 self-end">
-              <p><strong className="text-pink-400">Nodes:</strong> {nodes.length} ({nodes.join(", ")})</p>
+            <div className="text-xs sm:text-sm space-y-1">
+              <p><strong className="text-pink-400">Nodes:</strong> {nodes.length}</p>
               <p><strong className="text-cyan-400">Edges:</strong> {edges.length}</p>
-              {edges.length > 0 && (
-                <p className="text-xs text-gray-400 truncate">
-                  {edges.map(([a,b]) => `${a}↔${b}`).join(", ")}
-                </p>
-              )}
             </div>
           </div>
         </div>
 
-        <div className="text-center mb-10">
-          <button
-            onClick={findConnectedComponents}
-            className="bg-gradient-to-r from-pink-600 via-purple-600 to-blue-600 hover:from-pink-500 hover:via-purple-500 hover:to-blue-500 text-white text-2xl font-bold px-16 py-6 rounded-2xl shadow-2xl transform hover:scale-105 transition duration-300"
-           >
-            Find Connected Components
+        <div className="text-center mb-4 sm:mb-8">
+          <button onClick={findConnectedComponents}
+            className="bg-gradient-to-r from-pink-600 to-blue-600 hover:from-pink-500 hover:to-blue-500 text-white text-sm sm:text-lg md:text-xl font-bold px-4 sm:px-12 py-3 sm:py-6 rounded-lg sm:rounded-2xl shadow-2xl transform hover:scale-105 transition">
+            Find Components
           </button>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-          <div className="xl:col-span-2 space-y-8">
+        {/* Visualization Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
+          <div className="lg:col-span-2 space-y-4 sm:space-y-8">
             {/* Graph */}
-            <div className="bg-gray-900/90 backdrop-blur border border-gray-800 rounded-2xl p-6 shadow-2xl">
-              <h3 className="text-3xl font-bold text-center mb-6 bg-gradient-to-r from-amber-400 to-pink-400 bg-clip-text text-transparent">
-                Graph Visualization
-              </h3>
-              <div className="relative">
-                <svg width="100%" height="560" viewBox="0 0 700 560" className="bg-gray-900 rounded-xl">
+            <div className="bg-gray-900/90 backdrop-blur border border-gray-800 rounded-lg sm:rounded-2xl shadow-2xl p-3 sm:p-6">
+              <h3 className="text-base sm:text-2xl font-bold text-center mb-3 sm:mb-6 text-amber-400">Graph</h3>
+              <div className="w-full flex justify-center" ref={containerRef}>
+                <svg width="100%" height="auto" viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="bg-gray-950 rounded-lg" style={{ maxWidth: "100%" }}>
                   {/* Edges */}
                   {edges.map(([u, v], i) => {
                     const p1 = positions[u];
@@ -395,50 +364,30 @@ const ConnectedComponents = () => {
                         <circle
                           cx={pos.x}
                           cy={pos.y}
-                          r="42"
+                          r={nodeRadius}
                           fill={isCurrent ? "#ec4899" : getNodeColor(node)}
                           stroke={isCurrent ? "#f472b6" : "#374151"}
-                          strokeWidth={isCurrent || isVisited ? 6 : 3}
+                          strokeWidth={isCurrent || isVisited ? 4 : 2}
                           className="transition-all duration-500 cursor-pointer hover:scale-110"
-                          onClick={() => {
-                            if (currentStep === -1) {
-                              setFromNode(node);
-                              setToNode(node);
-                            }
-                          }}
                         />
                         <text 
                           x={pos.x} 
-                          y={pos.y + 8} 
+                          y={pos.y + 6} 
                           textAnchor="middle" 
-                          fontSize="24" 
+                          fontSize={isMobile ? "14" : "18"} 
                           fontWeight="bold" 
                           fill="white"
-                          className="transition-all duration-500"
+                          className="transition-all duration-500 pointer-events-none"
                         >
                           {node}
                         </text>
-                        {currentStep === -1 && (
-                          <text 
-                            x={pos.x} 
-                            y={pos.y + 35} 
-                            textAnchor="middle" 
-                            fontSize="12" 
-                            fill="#9ca3af"
-                            className="pointer-events-none"
-                          >
-                            Click to select
-                          </text>
-                        )}
                       </g>
                     );
                   })}
-                  
-                  {/* Component labels in final state */}
+
+                  {/* Component Labels */}
                   {finalState && currentStep === steps.length - 1 && finalComponents().map(comp => {
                     if (comp.nodes.length === 1) return null;
-                    
-                    // Find center of component
                     const centerX = comp.nodes.reduce((sum, n) => sum + positions[n].x, 0) / comp.nodes.length;
                     const centerY = comp.nodes.reduce((sum, n) => sum + positions[n].y, 0) / comp.nodes.length;
                     
@@ -458,7 +407,7 @@ const ConnectedComponents = () => {
                           x={centerX} 
                           y={centerY - 25} 
                           textAnchor="middle" 
-                          fontSize="16" 
+                          fontSize={isMobile ? "12" : "16"} 
                           fontWeight="bold" 
                           fill={comp.color}
                         >
@@ -471,162 +420,92 @@ const ConnectedComponents = () => {
               </div>
             </div>
 
-            <div className="bg-gradient-to-r from-purple-900/80 to-blue-900/80 backdrop-blur border border-purple-700 rounded-2xl p-8 shadow-2xl">
-              <h3 className="text-2xl font-bold text-pink-300 mb-3">Algorithm Step</h3>
-              <div className="text-lg text-gray-100 whitespace-pre-line leading-relaxed">
-                {state.desc}
-              </div>
+            {/* Description */}
+            <div className="bg-gradient-to-r from-purple-900/80 to-blue-900/80 backdrop-blur border border-purple-700 rounded-lg sm:rounded-2xl p-3 sm:p-6 shadow-2xl">
+              <h3 className="text-sm sm:text-xl font-bold text-pink-300 mb-2 sm:mb-3">Step Info</h3>
+              <p className="text-xs sm:text-base text-gray-100 whitespace-pre-line leading-relaxed">{state.desc}</p>
             </div>
           </div>
 
-          <div className="space-y-8">
+          {/* Side Panel */}
+          <div className="space-y-4 sm:space-y-6">
             {/* Final Result */}
             {finalState && currentStep === steps.length - 1 && (
-              <div className="bg-gray-900/90 backdrop-blur border border-amber-600/60 rounded-2xl p-8 shadow-2xl">
-                <h3 className="text-3xl font-bold text-center mb-8 bg-gradient-to-r from-amber-400 to-pink-400 bg-clip-text text-transparent">
-                   Connected Components Found!
+              <div className="bg-gray-900/90 backdrop-blur border border-amber-600/60 rounded-lg sm:rounded-2xl p-3 sm:p-6 shadow-2xl">
+                <h3 className="text-base sm:text-2xl font-bold text-center mb-4 bg-gradient-to-r from-amber-400 to-pink-400 bg-clip-text text-transparent">
+                  Components Found!
                 </h3>
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {finalComponents().map(c => (
-                    <div key={c.id} className="p-4 rounded-xl border-2 shadow-lg" 
+                    <div key={c.id} className="p-3 sm:p-4 rounded-lg border-2 text-xs sm:text-sm" 
                          style={{ 
                            backgroundColor: c.color + "20", 
                            borderColor: c.color,
-                           boxShadow: `0 0 20px ${c.color}20`
                          }}>
                       <div className="flex justify-between items-center mb-2">
-                        <span className="text-lg font-bold text-white">
+                        <span className="font-bold text-white">
                           Component {c.id + 1}
                         </span>
-                        <div className="flex items-center gap-2">
-                          <div className="w-4 h-4 rounded-full" style={{backgroundColor: c.color}}></div>
-                          <span className="text-sm text-gray-300">{c.nodes.length} node{c.nodes.length > 1 ? 's' : ''}</span>
-                        </div>
+                        <span className="text-xs text-gray-300">{c.nodes.length} nodes</span>
                       </div>
-                      <div className="font-mono text-xl bg-black/20 rounded p-2">
+                      <div className="font-mono bg-black/40 rounded p-2 text-xs break-all">
                         {c.nodes.join(" ↔ ")}
                       </div>
                     </div>
                   ))}
                 </div>
-                
-                {/* Verification message */}
-                <div className="mt-6 p-4 bg-blue-900/30 border border-blue-500/30 rounded-lg">
-                  <p className="text-sm text-blue-300">
-                     <strong>Verification:</strong> Each component is fully connected internally, 
-                    and no edges exist between different components.
-                  </p>
-                </div>
               </div>
             )}
 
             {/* Legend */}
-            <div className="bg-gradient-to-br from-purple-900/50 to-blue-900/50 backdrop-blur border border-purple-700 rounded-2xl p-6">
-              <h4 className="text-xl font-bold text-yellow-400 mb-4">Legend</h4>
-              <div className="space-y-3 text-sm text-gray-300">
-                <div className="flex items-center gap-3">
-                  <div className="w-4 h-4 bg-gray-600 rounded-full"></div>
-                  <span>Unvisited node</span>
+            <div className="bg-gradient-to-br from-purple-900/50 to-blue-900/50 backdrop-blur border border-purple-700 rounded-lg sm:rounded-2xl p-3 sm:p-6">
+              <h4 className="text-sm sm:text-lg font-bold text-yellow-400 mb-2 sm:mb-3">Legend</h4>
+              <div className="space-y-2 text-xs sm:text-sm text-gray-300">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-gray-600 rounded-full"></div>
+                  <span>Unvisited</span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-4 h-4 bg-green-500 rounded-full"></div>
-                  <span>Visited node</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <span>Visited</span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-4 h-4 bg-pink-500 rounded-full"></div>
-                  <span>Current node (DFS)</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-pink-500 rounded-full"></div>
+                  <span>Current</span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="w-4 h-4 border-2 border-amber-400 rounded-full"></span>
-                  <span>Component boundary</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Examples */}
-            <div className="bg-gray-900/50 backdrop-blur border border-gray-700 rounded-xl p-4">
-              <h4 className="text-lg font-bold text-cyan-400 mb-3">Quick Examples</h4>
-              <div className="text-sm space-y-2 text-gray-300">
-                <div className="text-sm space-y-2 text-gray-300">
-  <p>
-    <strong>Your Example:</strong> {'{0, 1, 2}'} ↔ {'{3, 4}'} →{' '}
-    <span className="text-green-400">2 components</span>
-  </p>
-  <p>
-    <strong>No edges:</strong> {'{0}, {1}, {2}, {3}, {4}'} →{' '}
-    <span className="text-green-400">5 components</span>
-  </p>
-  <p>
-    <strong>Fully connected:</strong> All nodes connected →{' '}
-    <span className="text-green-400">1 component</span>
-  </p>
-</div>
-                <p><strong>No edges:</strong> {0},{1},{2},{3},{4} → <span className="text-green-400">5 components</span></p>
-                <p><strong>Fully connected:</strong> All nodes ↔ → <span className="text-green-400">1 component</span></p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Playback Controls */}
+        {/* Controls */}
         {steps.length > 0 && (
-          <div className="mt-12 bg-gray-900/90 backdrop-blur border border-gray-800 rounded-2xl p-8 shadow-2xl flex flex-wrap justify-center items-center gap-6">
-            <button 
-              onClick={() => setCurrentStep(0)} 
-              className="bg-gray-700 hover:bg-gray-600 px-6 py-4 rounded-xl font-bold transition-colors"
-              title="First step"
-            >
-              ⏮️ First
-            </button>
-            <button 
-              onClick={() => setCurrentStep(Math.max(0, currentStep - 1))} 
-              className="bg-gray-700 hover:bg-gray-600 px-6 py-4 rounded-xl font-bold transition-colors"
-              title="Previous step"
-            >
-              ⏪ Prev
-            </button>
-            <button 
-              onClick={() => setIsPlaying(!isPlaying)} 
-              className={`px-12 py-5 rounded-xl font-bold text-xl transition-all ${
-                isPlaying 
-                  ? "bg-red-600 hover:bg-red-700" 
-                  : "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500"
-              }`}
-              title={isPlaying ? "Pause animation" : "Play animation"}
-            >
-              {isPlaying ? "⏸️ Pause" : "▶️ Play"}
-            </button>
-            <button 
-              onClick={() => setCurrentStep(Math.min(steps.length - 1, currentStep + 1))} 
-              className="bg-gray-700 hover:bg-gray-600 px-6 py-4 rounded-xl font-bold transition-colors"
-              title="Next step"
-            >
-              ⏩ Next
-            </button>
-            <button 
-              onClick={() => setCurrentStep(steps.length - 1)} 
-              className="bg-gray-700 hover:bg-gray-600 px-6 py-4 rounded-xl font-bold transition-colors"
-              title="Last step"
-            >
-              ⏭️ Last
-            </button>
-            
-            <div className="flex items-center gap-4 ml-8">
-              <span className="text-gray-400">Speed:</span>
-              <input 
-                type="range" 
-                min="300" 
-                max="2500" 
-                step="100" 
-                value={speed} 
-                onChange={(e) => setSpeed(+e.target.value)} 
-                className="w-48 accent-pink-500" 
-              />
-              <span className="text-sm text-gray-400">{speed}ms</span>
-            </div>
-            
-            <div className="ml-auto text-sm text-gray-400">
-              Step {currentStep + 1} of {steps.length}
+          <div className="mt-6 sm:mt-12 bg-gray-900/90 backdrop-blur border border-gray-800 rounded-lg sm:rounded-2xl p-3 sm:p-6 shadow-2xl">
+            <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-4">
+              <button onClick={() => setCurrentStep(0)} className="bg-gray-700 hover:bg-gray-600 px-2 sm:px-4 py-2 rounded text-xs sm:text-sm font-bold transition">⏮ First</button>
+              <button onClick={() => setCurrentStep(Math.max(0, currentStep - 1))} className="bg-gray-700 hover:bg-gray-600 px-2 sm:px-4 py-2 rounded text-xs sm:text-sm font-bold transition">⏪ Prev</button>
+              
+              <button
+                onClick={() => setIsPlaying(!isPlaying)}
+                className={`px-4 sm:px-8 py-2 rounded font-bold text-xs sm:text-sm transition ${
+                  isPlaying ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-500"
+                }`}
+              >
+                {isPlaying ? "⏸ Pause" : "▶ Play"}
+              </button>
+
+              <button onClick={() => setCurrentStep(Math.min(steps.length - 1, currentStep + 1))} className="bg-gray-700 hover:bg-gray-600 px-2 sm:px-4 py-2 rounded text-xs sm:text-sm font-bold transition">⏩ Next</button>
+              <button onClick={() => setCurrentStep(steps.length - 1)} className="bg-gray-700 hover:bg-gray-600 px-2 sm:px-4 py-2 rounded text-xs sm:text-sm font-bold transition">⏭ Last</button>
+
+              <div className="flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                <label className="text-xs text-gray-400">Speed:</label>
+                <input type="range" min="300" max="2500" step="100" value={speed} onChange={(e) => setSpeed(+e.target.value)} className="w-20 sm:w-32 accent-pink-500" />
+                <span className="text-xs text-gray-400 whitespace-nowrap">{speed}ms</span>
+              </div>
+
+              <div className="text-xs text-gray-400 w-full sm:w-auto text-center sm:ml-auto">
+                Step {currentStep + 1} / {steps.length}
+              </div>
             </div>
           </div>
         )}
