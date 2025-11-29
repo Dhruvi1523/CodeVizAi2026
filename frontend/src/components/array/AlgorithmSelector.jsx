@@ -2,6 +2,7 @@ import React from 'react';
 import { algorithms } from '../../data/algorithms';
 import { Link } from 'react-router-dom';
 import { FaSort, FaSearch, FaQuestion } from 'react-icons/fa';
+import Navbar from "../Navbar.jsx"
 
 const AlgorithmSelector = () => {
   const renderIcon = (category) => {
@@ -38,6 +39,7 @@ const AlgorithmSelector = () => {
 
   return (
     <div className="min-h-screen bg-[#0f172a] text-[#f1f5f9] px-6 py-6">
+      <Navbar/>
       <div className="max-w-7xl mx-auto">
         <h2 className="text-2xl font-bold mb-6">Select an Algorithm</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
